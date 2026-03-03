@@ -1,32 +1,44 @@
-let loopingAudio: HTMLAudioElement | null = null
+let loopingAudio: HTMLAudioElement | null = null;
+let tickAudio: HTMLAudioElement | null = null;
 
 export const playTick = (volume: number) => {
-  playSound('Tick-DeepFrozenApps-397275646.mp3', volume)
-}
+  if (!tickAudio) {
+    tickAudio = new Audio("/audio/Tick-DeepFrozenApps-397275646.mp3");
+  }
+  tickAudio.volume = volume;
+  tickAudio.currentTime = 0;
+  tickAudio.play().catch(() => {});
+};
 
 export const playSound = (sound: string, volume: number) => {
-  const audio = new Audio(`/audio/${sound}`)
-  audio.volume = volume
-  audio.oncanplaythrough = audio.play
-}
+  const audio = new Audio(`/audio/${sound}`);
+  audio.volume = volume;
+  audio.oncanplaythrough = audio.play;
+};
 
 export const playLoopedSound = (sound: string, volume: number) => {
-  loopingAudio = new Audio(`/audio/${sound}`)
-  loopingAudio.volume = volume
-  loopingAudio.loop = true
-  loopingAudio.oncanplaythrough = loopingAudio.play
-}
+  loopingAudio = new Audio(`/audio/${sound}`);
+  loopingAudio.volume = volume;
+  loopingAudio.loop = true;
+  loopingAudio.oncanplaythrough = loopingAudio.play;
+};
 
 export const cancelLoopingSounds = () => {
-  if (!loopingAudio) return
-  loopingAudio.pause()
-  loopingAudio = null
-}
+  if (!loopingAudio) return;
+  loopingAudio.pause();
+  loopingAudio = null;
+};
 
 export const duringSpinSounds = [
-  { name: 'Beyond the Cloudy Sky', file: 'beyond-the-cloudy-sky-shutterstock.mp3' }
-]
+  {
+    name: "Beyond the Cloudy Sky",
+    file: "beyond-the-cloudy-sky-shutterstock.mp3",
+  },
+];
 
 export const afterSpinSounds = [
-  { name: 'Small Crowd Applause', file: 'SMALL_CROWD_APPLAUSE-Yannick_Lemieux-1268806408.mp3' }
-]
+  {
+    name: "Small Crowd Applause",
+    file: "SMALL_CROWD_APPLAUSE-Yannick_Lemieux-1268806408.mp3",
+  },
+];
