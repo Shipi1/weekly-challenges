@@ -1,0 +1,10 @@
+node_modules
+.svelte-kit
+.env
+.env.*
+!.env.template
+.DS_Store
+.git
+.firebase
+firebase-debug.log
+test-results
