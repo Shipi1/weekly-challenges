@@ -50,9 +50,11 @@ export function destroySession(token: string): void {
   activeSessions.delete(token);
 }
 
-// --- Data read/write ---
+// --- Data read/write (single in-memory cache) ---
 
-function readData(): SpinData {
+let cache: SpinData | null = null;
+
+function loadFromDisk(): SpinData {
   if (!existsSync(DB_PATH)) {
     return {
       nextId: 1,
@@ -67,39 +69,33 @@ function readData(): SpinData {
     const data = JSON.parse(raw);
     let nextId = data.nextId ?? 1;
     const originalSpins = data.spins ?? [];
+    let migrated = false;
     const spins: SpinRow[] = originalSpins.map((s: Partial<SpinRow>) => {
       if (typeof s.id === "number") return s as SpinRow;
-      const migrated = {
+      migrated = true;
+      const row = {
         id: nextId,
         winner_text: String(s.winner_text ?? ""),
         winner_color: (s.winner_color as string | null) ?? null,
         timestamp: Number(s.timestamp ?? Date.now()),
       };
       nextId += 1;
-      return migrated;
+      return row;
     });
 
-    // Persist migration if we assigned ids to legacy rows.
-    if (
-      spins.length !== originalSpins.length ||
-      nextId !== (data.nextId ?? 1)
-    ) {
-      writeData({
-        nextId,
-        spins,
-        nextMessageId: data.nextMessageId ?? 1,
-        messages: data.messages ?? [],
-        entries: data.entries ?? [],
-      });
-    }
-
-    return {
+    const result: SpinData = {
       nextId,
       spins,
       nextMessageId: data.nextMessageId ?? 1,
       messages: data.messages ?? [],
       entries: data.entries ?? [],
     };
+
+    if (migrated) {
+      writeToDisk(result);
+    }
+
+    return result;
   } catch {
     return {
       nextId: 1,
@@ -111,24 +107,34 @@ function readData(): SpinData {
   }
 }
 
-function writeData(data: SpinData): void {
+function getData(): SpinData {
+  if (!cache) {
+    cache = loadFromDisk();
+  }
+  return cache;
+}
+
+function writeToDisk(data: SpinData): void {
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(DB_PATH, JSON.stringify(data, null, 2), "utf-8");
+}
+
+function persist(): void {
+  writeToDisk(getData());
 }
 
 // --- Spins ---
 
 export function getAllSpins(): SpinRow[] {
-  const data = readData();
-  // Return newest first, capped at 500
-  return data.spins.sort((a, b) => b.timestamp - a.timestamp).slice(0, 500);
+  const data = getData();
+  return data.spins.toSorted((a, b) => b.timestamp - a.timestamp).slice(0, 500);
 }
 
 export function insertSpin(
   winnerText: string,
   winnerColor: string | null,
 ): SpinRow {
-  const data = readData();
+  const data = getData();
   const row: SpinRow = {
     id: data.nextId,
     winner_text: winnerText.slice(0, 200),
@@ -137,34 +143,35 @@ export function insertSpin(
   };
   data.spins.push(row);
   data.nextId++;
-  writeData(data);
+  persist();
   return row;
 }
 
 export function clearSpins(): void {
-  const data = readData();
+  const data = getData();
   data.spins = [];
   data.nextId = 1;
-  writeData(data);
+  persist();
 }
 
 export function deleteSpin(id: number): void {
   if (!Number.isFinite(id)) return;
-  const data = readData();
+  const data = getData();
   data.spins = data.spins.filter((s) => s.id !== id);
-  writeData(data);
+  persist();
 }
 
 // --- Messages ---
 
 export function getAllMessages(): MessageRow[] {
-  const data = readData();
-  // Return newest first, capped at 500
-  return data.messages.sort((a, b) => b.timestamp - a.timestamp).slice(0, 500);
+  const data = getData();
+  return data.messages
+    .toSorted((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 500);
 }
 
 export function insertMessage(title: string, description: string): MessageRow {
-  const data = readData();
+  const data = getData();
   const row: MessageRow = {
     id: data.nextMessageId,
     title: title.slice(0, 80),
@@ -173,58 +180,58 @@ export function insertMessage(title: string, description: string): MessageRow {
   };
   data.messages.push(row);
   data.nextMessageId++;
-  writeData(data);
+  persist();
   return row;
 }
 
 export function clearMessages(): void {
-  const data = readData();
+  const data = getData();
   data.messages = [];
   data.nextMessageId = 1;
-  writeData(data);
+  persist();
 }
 
 export function deleteMessage(id: number): void {
-  const data = readData();
+  const data = getData();
   data.messages = data.messages.filter((m) => m.id !== id);
-  writeData(data);
+  persist();
 }
 
 // --- Entries ---
 
 export function getAllEntries(): EntryRow[] {
-  return readData().entries;
+  return getData().entries;
 }
 
 export function setAllEntries(entries: EntryRow[]): EntryRow[] {
-  const data = readData();
+  const data = getData();
   data.entries = entries;
-  writeData(data);
+  persist();
   return data.entries;
 }
 
 export function addEntry(text: string): EntryRow {
-  const data = readData();
+  const data = getData();
   const entry: EntryRow = {
     id: randomUUID().split("-")[0],
     text: text.slice(0, 200),
   };
   data.entries.push(entry);
-  writeData(data);
+  persist();
   return entry;
 }
 
 export function removeEntry(id: string): void {
-  const data = readData();
+  const data = getData();
   data.entries = data.entries.filter((e) => e.id !== id);
-  writeData(data);
+  persist();
 }
 
 export function updateEntry(id: string, text: string): EntryRow | null {
-  const data = readData();
+  const data = getData();
   const entry = data.entries.find((e) => e.id === id);
   if (!entry) return null;
   entry.text = text.slice(0, 200);
-  writeData(data);
+  persist();
   return entry;
 }
