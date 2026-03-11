@@ -5,6 +5,9 @@ import {
   clearSpins,
   deleteSpin,
   validateSession,
+  getDebugMode,
+  removeEntry,
+  removeSubEntry,
 } from "$lib/server/db";
 import type { RequestHandler } from "./$types";
 
@@ -22,7 +25,7 @@ export const GET: RequestHandler = () => {
 
 export const POST: RequestHandler = async ({ request }) => {
   const body = await request.json();
-  const { winnerText, winnerColor, winnerDescription } = body;
+  const { winnerText, winnerColor, winnerDescription, entryId, resolvedSubEntries } = body;
 
   if (!winnerText || typeof winnerText !== "string") {
     return json({ error: "winnerText is required" }, { status: 400 });
@@ -34,7 +37,31 @@ export const POST: RequestHandler = async ({ request }) => {
     );
   }
 
+  if (getDebugMode()) {
+    return json(
+      {
+        winnerText,
+        winnerColor: winnerColor ?? null,
+        winnerDescription: winnerDescription ?? undefined,
+        timestamp: Date.now(),
+        debug: true,
+      },
+      { status: 201 },
+    );
+  }
+
   const row = insertSpin(winnerText, winnerColor ?? null, winnerDescription ?? undefined);
+
+  // Remove winner from the pool permanently
+  if (typeof entryId === "string") removeEntry(entryId);
+  if (Array.isArray(resolvedSubEntries)) {
+    for (const sub of resolvedSubEntries) {
+      if (typeof sub?.slug === "string" && typeof sub?.id === "string") {
+        removeSubEntry(sub.slug, sub.id);
+      }
+    }
+  }
+
   return json(
     {
       winnerText: row.winner_text,

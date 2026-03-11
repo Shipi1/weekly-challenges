@@ -1,13 +1,14 @@
 <script lang="ts">
   import Wheel from "$lib/components/Wheel.svelte";
   import spinStore, { DISABLE_SPIN_LOCK } from "$lib/stores/SpinStore.svelte";
+  import wheelStore from "$lib/stores/WheelStore";
   import { launchConfetti } from "$lib/utils/ConfettiLauncher";
   import type { OnStoppedData } from "$lib/utils/Wheel";
 
   let justSpun = $state(false);
 
   // Sub-wheels (for placeholder resolution)
-  interface SubWheelEntry { text: string }
+  interface SubWheelEntry { id: string; text: string }
   interface SubWheel { slug: string; entries: SubWheelEntry[] }
   let subWheels = $state<SubWheel[]>([]);
 
@@ -18,13 +19,19 @@
       .catch(() => {});
   }
 
-  function resolvePlaceholders(text: string): string {
-    if (!text.includes("{")) return text;
-    return text.replace(/\{(\w+)\}/g, (match, slug) => {
+  interface ResolvedSub { slug: string; id: string }
+
+  function resolvePlaceholders(text: string): { text: string; subs: ResolvedSub[] } {
+    const subs: ResolvedSub[] = [];
+    if (!text.includes("{")) return { text, subs };
+    const resolved = text.replace(/\{(\w+)\}/g, (match, slug) => {
       const sw = subWheels.find((s) => s.slug === slug);
       if (!sw || sw.entries.length === 0) return match;
-      return sw.entries[Math.floor(Math.random() * sw.entries.length)].text;
+      const entry = sw.entries[Math.floor(Math.random() * sw.entries.length)];
+      subs.push({ slug, id: entry.id });
+      return entry.text;
     });
+    return { text: resolved, subs };
   }
 
   // Messages
@@ -77,13 +84,26 @@
 
   const onWheelStopped = (e: CustomEvent<OnStoppedData>) => {
     const { winner, color } = e.detail;
-    const resolvedText = resolvePlaceholders(winner.text);
+    const { text: resolvedText, subs: resolvedSubs } = resolvePlaceholders(winner.text);
     justSpun = true;
     launchConfetti(
       "fireworks",
       color ? [color] : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
     );
-    spinStore.saveResult(resolvedText, color, winner.description).then(() => {
+
+    // Remove winner from wheel client-side immediately (visible on next spin)
+    wheelStore.entries = wheelStore.entries.filter((e) => e.id !== winner.id);
+    // Remove resolved sub-entries from local state
+    if (resolvedSubs.length > 0) {
+      subWheels = subWheels.map((sw) => ({
+        ...sw,
+        entries: sw.entries.filter(
+          (e) => !resolvedSubs.some((r) => r.slug === sw.slug && r.id === e.id),
+        ),
+      }));
+    }
+
+    spinStore.saveResult(resolvedText, color, winner.description, winner.id, resolvedSubs).then(() => {
       setTimeout(checkSync, 500);
     });
   };

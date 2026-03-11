@@ -7,6 +7,8 @@ interface WheelStoreData {
   entries: Entry[];
 }
 
+let serverFetchDone = false;
+
 const createWheelStore = (state: WheelStoreData) => {
   const store = persistedState("wheel", state);
 
@@ -18,16 +20,23 @@ const createWheelStore = (state: WheelStoreData) => {
         return r.json();
       })
       .then((data: Entry[]) => {
-        if (data.length > 0) {
-          store.value = { ...store.value, entries: data };
-        } else {
-          // Server has no entries yet — use entries.txt defaults
-          store.value = { ...store.value, entries: defaultEntries };
+        // Only overwrite if the user hasn't already spun (i.e. entries haven't been filtered yet)
+        if (!serverFetchDone) {
+          if (data.length > 0) {
+            store.value = { ...store.value, entries: data };
+          } else {
+            // Server has no entries yet — use entries.txt defaults
+            store.value = { ...store.value, entries: defaultEntries };
+          }
         }
+        serverFetchDone = true;
       })
       .catch(() => {
-        // Server unreachable — use entries.txt defaults
-        store.value = { ...store.value, entries: defaultEntries };
+        if (!serverFetchDone) {
+          // Server unreachable — use entries.txt defaults
+          store.value = { ...store.value, entries: defaultEntries };
+        }
+        serverFetchDone = true;
       });
   }
 
@@ -42,6 +51,8 @@ const createWheelStore = (state: WheelStoreData) => {
       return store.value.entries;
     },
     set entries(newValue: Entry[]) {
+      // Mark fetch as done so future server responses don't overwrite manual changes
+      serverFetchDone = true;
       store.value.entries = newValue;
     },
   };

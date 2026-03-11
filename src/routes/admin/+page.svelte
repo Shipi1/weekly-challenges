@@ -358,6 +358,37 @@
     });
   }
 
+  // --- Debug mode ---
+  let debugMode = $state(false);
+  let debugToggling = $state(false);
+
+  async function loadDebugMode() {
+    try {
+      const res = await fetch("/api/debug-mode");
+      if (!res.ok) return;
+      const data = await res.json();
+      debugMode = data.debugMode;
+    } catch {}
+  }
+
+  async function toggleDebugMode() {
+    if (debugToggling) return;
+    debugToggling = true;
+    try {
+      const res = await fetch("/api/debug-mode", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ debugMode: !debugMode }),
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) return;
+      const data = await res.json();
+      debugMode = data.debugMode;
+    } finally {
+      debugToggling = false;
+    }
+  }
+
   // --- Spin History ---
   interface Spin {
     id: number;
@@ -423,6 +454,7 @@
       loadSubmissions();
       loadSpins();
       loadSubWheels();
+      loadDebugMode();
     }
   });
 </script>
@@ -434,8 +466,24 @@
 <svelte:window onclick={closeSpinMenus} />
 
 <div class="min-h-screen p-6 max-w-2xl mx-auto">
-  <a href="/" class="text-indigo-400 hover:underline text-sm">← Back to Wheel</a
-  >
+  <div class="flex items-center justify-between">
+    <a href="/" class="text-indigo-400 hover:underline text-sm">← Back to Wheel</a>
+    {#if loggedIn}
+      <button
+        onclick={toggleDebugMode}
+        disabled={debugToggling}
+        title={debugMode ? "Cambiar a Producción" : "Cambiar a Debug"}
+        class="flex items-center gap-2 disabled:opacity-50"
+      >
+        <span class="text-xs font-semibold {debugMode ? 'text-yellow-400' : 'text-green-400'}">
+          {debugMode ? "DEBUG" : "PROD"}
+        </span>
+        <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors {debugMode ? 'bg-yellow-500' : 'bg-green-600'}">
+          <span class="inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform {debugMode ? 'translate-x-6' : 'translate-x-1'}"></span>
+        </span>
+      </button>
+    {/if}
+  </div>
 
   <h1 class="text-3xl font-bold mt-4 mb-6">🔧 Admin — Wheel Entries</h1>
 

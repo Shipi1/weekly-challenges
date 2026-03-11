@@ -81,7 +81,13 @@ function createSpinStore() {
         year: "numeric",
       });
     },
-    async saveResult(winnerText: string, winnerColor: string | null, winnerDescription?: string) {
+    async saveResult(
+      winnerText: string,
+      winnerColor: string | null,
+      winnerDescription?: string,
+      entryId?: string,
+      resolvedSubEntries?: { slug: string; id: string }[],
+    ) {
       const now = Date.now();
       const entry: SpinHistoryEntry = {
         winnerText,
@@ -103,7 +109,7 @@ function createSpinStore() {
         const res = await fetch("/api/spins", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ winnerText, winnerColor, winnerDescription }),
+          body: JSON.stringify({ winnerText, winnerColor, winnerDescription, entryId, resolvedSubEntries }),
         });
         if (!res.ok) {
           throw new Error(`Server returned ${res.status}`);

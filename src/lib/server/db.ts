@@ -39,6 +39,7 @@ interface SpinData {
   messages: MessageRow[];
   entries: EntryRow[];
   subWheels: SubWheelRow[];
+  debugMode: boolean;
 }
 
 // --- Active auth tokens (in-memory, lost on restart = forced re-login) ---
@@ -72,6 +73,7 @@ function loadFromDisk(): SpinData {
       messages: [],
       entries: [],
       subWheels: [],
+      debugMode: false,
     };
   }
   try {
@@ -100,6 +102,7 @@ function loadFromDisk(): SpinData {
       messages: data.messages ?? [],
       entries: data.entries ?? [],
       subWheels: data.subWheels ?? [],
+      debugMode: data.debugMode ?? false,
     };
 
     if (migrated) {
@@ -115,6 +118,7 @@ function loadFromDisk(): SpinData {
       messages: [],
       entries: [],
       subWheels: [],
+      debugMode: false,
     };
   }
 }
@@ -326,4 +330,16 @@ export function updateSubWheel(slug: string, label: string): SubWheelRow | null 
   sw.label = label.trim();
   persist();
   return sw;
+}
+
+// --- Debug mode ---
+
+export function getDebugMode(): boolean {
+  return getData().debugMode;
+}
+
+export function setDebugMode(value: boolean): void {
+  const data = getData();
+  data.debugMode = value;
+  persist();
 }

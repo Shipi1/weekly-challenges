@@ -1,19 +1,32 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     initialWheelState,
     click,
     tick,
     type WheelState,
   } from "$lib/utils/WheelState";
-  import { defaultEntries, type Entry } from "$lib/utils/Wheel";
+  import { type Entry } from "$lib/utils/Wheel";
 
   const SPINS_PER_RUN = 10000;
   const NUM_RUNS = 3;
   const SPIN_TIME = 10;
   const INDEFINITE_SPIN = false;
 
-  const entries: Entry[] = defaultEntries;
-  const entryNames = entries.map((e) => e.text);
+  let entries = $state<Entry[]>([]);
+  let entryNames = $derived(entries.map((e) => e.text));
+  let loadingEntries = $state(true);
+
+  onMount(async () => {
+    try {
+      const res = await fetch("/api/entries");
+      if (res.ok) entries = await res.json();
+    } catch (e) {
+      console.error("Failed to load entries:", e);
+    } finally {
+      loadingEntries = false;
+    }
+  });
 
   type RunResult = Record<string, number>;
 
@@ -126,9 +139,17 @@
     ({(100 / entryNames.length).toFixed(1)}%) if the distribution is fair.
   </p>
 
+  {#if loadingEntries}
+    <p class="text-gray-400 text-sm mb-8">Loading entries…</p>
+  {:else if entries.length === 0}
+    <p class="text-red-400 text-sm mb-8">No entries found. Add entries from the admin panel first.</p>
+  {:else}
+    <p class="text-gray-500 text-xs mb-4">{entries.length} entries loaded from server.</p>
+  {/if}
+
   <button
     class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold transition-colors mb-8"
-    disabled={running}
+    disabled={running || loadingEntries || entries.length === 0}
     onclick={startTest}
   >
     {#if running}
