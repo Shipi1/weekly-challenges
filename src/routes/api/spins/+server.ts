@@ -14,6 +14,7 @@ export const GET: RequestHandler = () => {
     id: r.id,
     winnerText: r.winner_text,
     winnerColor: r.winner_color,
+    winnerDescription: r.winner_description,
     timestamp: r.timestamp,
   }));
   return json(history);
@@ -21,7 +22,7 @@ export const GET: RequestHandler = () => {
 
 export const POST: RequestHandler = async ({ request }) => {
   const body = await request.json();
-  const { winnerText, winnerColor } = body;
+  const { winnerText, winnerColor, winnerDescription } = body;
 
   if (!winnerText || typeof winnerText !== "string") {
     return json({ error: "winnerText is required" }, { status: 400 });
@@ -33,11 +34,12 @@ export const POST: RequestHandler = async ({ request }) => {
     );
   }
 
-  const row = insertSpin(winnerText, winnerColor ?? null);
+  const row = insertSpin(winnerText, winnerColor ?? null, winnerDescription ?? undefined);
   return json(
     {
       winnerText: row.winner_text,
       winnerColor: row.winner_color,
+      winnerDescription: row.winner_description,
       timestamp: row.timestamp,
     },
     { status: 201 },

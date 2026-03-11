@@ -9,6 +9,7 @@ export interface SpinRow {
   id: number;
   winner_text: string;
   winner_color: string | null;
+  winner_description?: string;
   timestamp: number;
 }
 
@@ -22,6 +23,7 @@ export interface MessageRow {
 export interface EntryRow {
   id: string;
   text: string;
+  description?: string;
 }
 
 interface SpinData {
@@ -133,12 +135,14 @@ export function getAllSpins(): SpinRow[] {
 export function insertSpin(
   winnerText: string,
   winnerColor: string | null,
+  winnerDescription?: string,
 ): SpinRow {
   const data = getData();
   const row: SpinRow = {
     id: data.nextId,
     winner_text: winnerText.slice(0, 200),
     winner_color: winnerColor,
+    winner_description: winnerDescription?.slice(0, 350),
     timestamp: Date.now(),
   };
   data.spins.push(row);
@@ -175,7 +179,7 @@ export function insertMessage(title: string, description: string): MessageRow {
   const row: MessageRow = {
     id: data.nextMessageId,
     title: title.slice(0, 80),
-    description: description.slice(0, 200),
+    description: description.slice(0, 350),
     timestamp: Date.now(),
   };
   data.messages.push(row);
@@ -210,11 +214,12 @@ export function setAllEntries(entries: EntryRow[]): EntryRow[] {
   return data.entries;
 }
 
-export function addEntry(text: string): EntryRow {
+export function addEntry(text: string, description?: string): EntryRow {
   const data = getData();
   const entry: EntryRow = {
     id: randomUUID().split("-")[0],
     text: text.slice(0, 200),
+    description: description?.slice(0, 350),
   };
   data.entries.push(entry);
   persist();
@@ -227,11 +232,12 @@ export function removeEntry(id: string): void {
   persist();
 }
 
-export function updateEntry(id: string, text: string): EntryRow | null {
+export function updateEntry(id: string, text: string, description?: string): EntryRow | null {
   const data = getData();
   const entry = data.entries.find((e) => e.id === id);
   if (!entry) return null;
   entry.text = text.slice(0, 200);
+  if (description !== undefined) entry.description = description.slice(0, 350);
   persist();
   return entry;
 }

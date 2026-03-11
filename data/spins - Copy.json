@@ -1,0 +1,125 @@
+{
+  "nextId": 1,
+  "spins": [],
+  "nextMessageId": 18,
+  "messages": [
+    {
+      "id": 4,
+      "title": "Sound Collage",
+      "description": "Create a sound collage by combining multiple audio clips together. You can use any audio editing software or programming language that supports audio manipulation. The goal is to create a unique and interesting soundscape by layering different sounds, such as music, nature sounds, and spoken word.",
+      "timestamp": 1773246689288
+    },
+    {
+      "id": 5,
+      "title": "Musicalizar una escena cinématica",
+      "description": "Compón una banda sonora original para una escena de cine o videojuego. Sincroniza la música con hitos visuales y diseña capas sonoras que evolucionen con la narrativa. El objetivo es potenciar la atmósfera emocional y el ritmo mediante el uso de texturas, melodías y dinámicas adaptativas.",
+      "timestamp": 1773247232248
+    },
+    {
+      "id": 6,
+      "title": "Composición sorda",
+      "description": "Crea una pieza musical basándote exclusivamente en la representación visual. Sin usar el monitoreo de audio, organiza estructuras, ritmos y armonías guiado por la teoría y la lógica visual. El objetivo es confiar en el oído interno para estructurar la obra antes de escucharla.",
+      "timestamp": 1773247311562
+    },
+    {
+      "id": 7,
+      "title": "Samplear elementos de tu cocina",
+      "description": "Crea una composición rítmica o melódica utilizando únicamente grabaciones de objetos domésticos. Captura texturas, percusiones y resonancias metálicas o de vidrio para transformarlas en instrumentos musicales. El objetivo es resignificar sonidos cotidianos en una pieza sonora coherente.",
+      "timestamp": 1773247345731
+    },
+    {
+      "id": 8,
+      "title": "Utilizar máximo 4 tracks",
+      "description": "Compón una pieza sonora utilizando únicamente cuatro pistas de audio o MIDI.",
+      "timestamp": 1773247379811
+    },
+    {
+      "id": 9,
+      "title": "Tiempo límite de una hora",
+      "description": "Compón una pieza musical completa en un tiempo límite de una hora. Toma decisiones rápidas de armonía, ritmo y estructura sin detenerte en detalles técnicos profundos. El objetivo es potenciar la intuición creativa y la toma de decisiones eficiente para finalizar una obra bajo presión.",
+      "timestamp": 1773247469496
+    },
+    {
+      "id": 10,
+      "title": "Componer para una imagen",
+      "description": "Compón una pieza sonora inspirada en una imagen estática. Traduce colores, texturas y formas en armonías, ritmos y matices que capturen la atmósfera visual. El objetivo es dar vida auditiva a la imagen, creando una narrativa que expanda la percepción de lo que se observa.",
+      "timestamp": 1773247517178
+    },
+    {
+      "id": 11,
+      "title": "Producir en Mono",
+      "description": "Crea una obra musical completa utilizando una mezcla Mono. Equilibra cada instrumento y frecuencia sin recurrir al panorama estéreo para dar profundidad y claridad a la obra. El objetivo es lograr una composición sólida que destaque por su balance tímbrico y coherencia técnica.",
+      "timestamp": 1773247771510
+    },
+    {
+      "id": 12,
+      "title": "Componer con un Hook pegajoso",
+      "description": "Crea una pieza musical centrada en un motivo melódico o rítmico de alto impacto. Diseña una frase breve, repetitiva y memorable que actúe como eje central de la composición. El objetivo es estructurar la energía y los arreglos de la canción para resaltar y potenciar este gancho auditivo.",
+      "timestamp": 1773247816303
+    },
+    {
+      "id": 13,
+      "title": "Usar VI7",
+      "description": "Integra el acorde VI7 como un dominante secundario para conducir la armonía. Tip: Utiliza su tercera mayor como nota de paso cromática para generar una tensión que resuelva con fluidez. El objetivo es añadir color y dirección a la progresión mediante este intercambio tonal.",
+      "timestamp": 1773248109570
+    },
+    {
+      "id": 14,
+      "title": "Usar Blackadder Chord",
+      "description": "Integra el acorde Blackadder (1, b2, b5, bb7) para generar una sonoridad densa, disonante y oscura. Utiliza este acorde de cuarta disminuida para crear puntos de tensión extrema que contrasten con la armonía principal. El objetivo es explorar texturas cromáticas complejas y resolver en atmósferas inesperadas.\n\nhttps://youtu.be/LApXYOeD-6c",
+      "timestamp": 1773248258778
+    },
+    {
+      "id": 15,
+      "title": "Uso del acorde Menor Maj7",
+      "description": "Emplea el acorde Menor (Maj7) para introducir una sonoridad sofisticada, nocturna y de tensión cinematográfica. Utiliza la séptima mayor como nota guía para crear líneas melódicas cromáticas o resoluciones elegantes. El objetivo es enriquecer la textura armónica con su carácter híbrido y misterioso.",
+      "timestamp": 1773248400148
+    },
+    {
+      "id": 16,
+      "title": "Componer sin usar el primer grado",
+      "description": "Compón una pieza musical omitiendo por completo el acorde de resolución o reposo tonal. Utiliza progresiones circulares, cadencias rotas o modos que mantengan una tensión constante y una sensación de movimiento perpetuo. El objetivo es explorar la narrativa sonora sin llegar nunca a un punto de descanso definitivo.",
+      "timestamp": 1773248460524
+    },
+    {
+      "id": 17,
+      "title": "Construir en base de un sample de otra canción",
+      "description": "Compón una pieza musical utilizando un fragmento de una obra existente como núcleo creativo. Manipula el audio mediante técnicas de picado, estiramiento temporal o cambio de tono para generar un contexto sonoro nuevo. El objetivo es recontextualizar la fuente original en una narrativa musical propia.",
+      "timestamp": 1773248543930
+    }
+  ],
+  "entries": [
+    {
+      "id": "d0fd82cf",
+      "text": "Cevasco time 🚬"
+    },
+    {
+      "id": "6128cbfa",
+      "text": "66"
+    },
+    {
+      "id": "85e3f77c",
+      "text": "67"
+    },
+    {
+      "id": "c2c26cde",
+      "text": "68"
+    },
+    {
+      "id": "7baa21bb",
+      "text": "HOLA DANI"
+    },
+    {
+      "id": "cbddd739",
+      "text": "HOLA SHIPI"
+    },
+    {
+      "id": "99bb4a4b",
+      "text": "Nirvana lovers"
+    },
+    {
+      "id": "f19eeeb8",
+      "text": "cevasco?"
+    }
+  ]
+}

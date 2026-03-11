@@ -83,6 +83,7 @@ export default class Wheel {
 export interface Entry {
   id: string;
   text: string;
+  description?: string;
 }
 
 export interface OnStoppedData {

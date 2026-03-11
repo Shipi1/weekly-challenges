@@ -8,6 +8,7 @@ export const DISABLE_SPIN_LOCK = true;
 export interface SpinResult {
   winnerText: string;
   winnerColor: string | null;
+  winnerDescription?: string;
 }
 
 export interface SpinHistoryEntry extends SpinResult {
@@ -80,11 +81,12 @@ function createSpinStore() {
         year: "numeric",
       });
     },
-    async saveResult(winnerText: string, winnerColor: string | null) {
+    async saveResult(winnerText: string, winnerColor: string | null, winnerDescription?: string) {
       const now = Date.now();
       const entry: SpinHistoryEntry = {
         winnerText,
         winnerColor,
+        winnerDescription,
         timestamp: now,
         synced: false,
       };
@@ -92,7 +94,7 @@ function createSpinStore() {
       // Update local state immediately so the UI reacts
       store.value = {
         lastSpinTimestamp: now,
-        result: { winnerText, winnerColor },
+        result: { winnerText, winnerColor, winnerDescription },
         history: [entry, ...(store.value.history ?? [])],
       };
 
@@ -101,7 +103,7 @@ function createSpinStore() {
         const res = await fetch("/api/spins", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ winnerText, winnerColor }),
+          body: JSON.stringify({ winnerText, winnerColor, winnerDescription }),
         });
         if (!res.ok) {
           throw new Error(`Server returned ${res.status}`);

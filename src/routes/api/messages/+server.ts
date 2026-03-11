@@ -26,10 +26,10 @@ export const POST: RequestHandler = async ({ request }) => {
   if (
     description &&
     typeof description === "string" &&
-    description.length > 200
+    description.length > 350
   ) {
     return json(
-      { error: "description exceeds 200 characters" },
+      { error: "description exceeds 350 characters" },
       { status: 400 },
     );
   }

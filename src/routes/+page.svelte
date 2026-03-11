@@ -18,7 +18,7 @@
   let msgDesc = $state("");
   let msgSending = $state(false);
   const TITLE_MAX = 80;
-  const MSG_MAX = 200;
+  const MSG_MAX = 350;
 
   // Load messages on init
   if (typeof window !== "undefined") {
@@ -61,7 +61,7 @@
       "fireworks",
       color ? [color] : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
     );
-    spinStore.saveResult(winner.text, color).then(() => {
+    spinStore.saveResult(winner.text, color, winner.description).then(() => {
       setTimeout(checkSync, 500);
     });
   };
@@ -162,6 +162,11 @@
                 >
                   {spinStore.result.winnerText}
                 </div>
+                {#if spinStore.result.winnerDescription}
+                  <p class="text-sm text-gray-300 mt-3 text-center max-w-sm">
+                    {spinStore.result.winnerDescription}
+                  </p>
+                {/if}
                 {#if spinStore.weekLabel}
                   <p class="text-sm text-gray-400 lg:text-gray-500">
                     Spun on {spinStore.weekLabel}

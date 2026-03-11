@@ -28,21 +28,22 @@ export const POST: RequestHandler = async ({ request }) => {
       .filter((e: any) => e.text && typeof e.text === 'string')
       .map((e: any) => ({
         id: e.id || crypto.randomUUID().split('-')[0],
-        text: String(e.text).slice(0, 200)
+        text: String(e.text).slice(0, 200),
+        description: e.description ? String(e.description).slice(0, 350) : undefined,
       }))
     const result = setAllEntries(entries)
     return json(result)
   }
 
   // Single add
-  const { text } = body
+  const { text, description } = body
   if (!text || typeof text !== 'string' || !text.trim()) {
     return json({ error: 'text is required' }, { status: 400 })
   }
   if (text.length > 200) {
     return json({ error: 'text exceeds 200 characters' }, { status: 400 })
   }
-  const entry = addEntry(text.trim())
+  const entry = addEntry(text.trim(), description ? String(description).trim() : undefined)
   return json(entry, { status: 201 })
 }
 

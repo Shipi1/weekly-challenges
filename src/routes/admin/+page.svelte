@@ -9,6 +9,7 @@
   interface Entry {
     id: string;
     text: string;
+    description?: string;
   }
   let entries = $state<Entry[]>([]);
   let newText = $state("");
@@ -176,7 +177,7 @@
     const res = await fetch("/api/entries", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ text: sub.title }),
+      body: JSON.stringify({ text: sub.title, description: sub.description }),
     });
     if (res.status === 401) {
       token = "";
@@ -196,10 +197,15 @@
   }
 
   async function rejectSubmission(sub: Submission) {
-    await fetch(`/api/messages?id=${sub.id}`, {
+    const res = await fetch(`/api/messages?id=${sub.id}`, {
       method: "DELETE",
       headers: authHeaders(),
     });
+    if (res.status === 401) {
+      token = "";
+      sessionStorage.removeItem("admin_token");
+      return;
+    }
     submissions = submissions.filter((s) => s.id !== sub.id);
   }
 
@@ -559,7 +565,12 @@
               >
             {:else}
               <!-- View mode -->
-              <span class="flex-1 text-white truncate">{entry.text}</span>
+              <div class="flex-1 min-w-0">
+                <span class="text-white truncate block">{entry.text}</span>
+                {#if entry.description}
+                  <span class="text-gray-400 text-xs truncate block">{entry.description}</span>
+                {/if}
+              </div>
               <button
                 class="text-gray-400 hover:text-indigo-400 text-sm shrink-0"
                 onclick={() => startEdit(entry)}>Edit</button
