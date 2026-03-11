@@ -69,6 +69,7 @@
     sessionStorage.removeItem("admin_token");
     entries = [];
     submissions = [];
+    subWheels = [];
   }
 
   // --- Entries CRUD ---
@@ -219,6 +220,144 @@
     });
   }
 
+  // --- Sub-wheels ---
+  interface SubWheel {
+    slug: string;
+    label: string;
+    entries: Entry[];
+  }
+  let subWheels = $state<SubWheel[]>([]);
+  let newSubSlug = $state("");
+  let newSubLabel = $state("");
+  let newSubTexts = $state<Record<string, string>>({});
+  let subEditId = $state<string | null>(null);
+  let subEditSlug = $state<string | null>(null);
+  let subEditText = $state("");
+  let subSaving = $state(false);
+  let expandedSubWheel = $state<string | null>(null);
+
+  async function loadSubWheels() {
+    try {
+      const res = await fetch("/api/sub-entries");
+      if (!res.ok) throw new Error();
+      subWheels = await res.json();
+    } catch {
+      subWheels = [];
+    }
+  }
+
+  async function createSubWheel() {
+    const slug = newSubSlug.trim().toLowerCase();
+    const label = newSubLabel.trim() || slug;
+    if (!slug || subSaving) return;
+    subSaving = true;
+    try {
+      const res = await fetch("/api/sub-entries", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ action: "create", slug, label }),
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) return;
+      const sw: SubWheel = await res.json();
+      subWheels = [...subWheels, sw];
+      newSubSlug = "";
+      newSubLabel = "";
+      expandedSubWheel = sw.slug;
+    } finally {
+      subSaving = false;
+    }
+  }
+
+  async function addSubEntry(slug: string) {
+    const text = (newSubTexts[slug] ?? "").trim();
+    if (!text || subSaving) return;
+    subSaving = true;
+    try {
+      const res = await fetch("/api/sub-entries", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ slug, text }),
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) return;
+      const entry: Entry = await res.json();
+      subWheels = subWheels.map((sw) =>
+        sw.slug === slug ? { ...sw, entries: [...sw.entries, entry] } : sw
+      );
+      newSubTexts = { ...newSubTexts, [slug]: "" };
+    } finally {
+      subSaving = false;
+    }
+  }
+
+  async function deleteSubEntry(slug: string, id: string) {
+    const res = await fetch(`/api/sub-entries?slug=${slug}&id=${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+    subWheels = subWheels.map((sw) =>
+      sw.slug === slug ? { ...sw, entries: sw.entries.filter((e) => e.id !== id) } : sw
+    );
+  }
+
+  async function deleteSubWheel(slug: string) {
+    if (!confirm(`Delete sub-wheel "${slug}" and all its entries?`)) return;
+    const res = await fetch(`/api/sub-entries?slug=${slug}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+    subWheels = subWheels.filter((sw) => sw.slug !== slug);
+    if (expandedSubWheel === slug) expandedSubWheel = null;
+  }
+
+  function startSubEdit(slug: string, entry: Entry) {
+    subEditSlug = slug;
+    subEditId = entry.id;
+    subEditText = entry.text;
+  }
+
+  function cancelSubEdit() {
+    subEditSlug = null;
+    subEditId = null;
+    subEditText = "";
+  }
+
+  async function saveSubEdit() {
+    if (!subEditSlug || !subEditId || !subEditText.trim()) return;
+    const res = await fetch("/api/sub-entries", {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify({ slug: subEditSlug, id: subEditId, text: subEditText.trim() }),
+    });
+    if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+    if (!res.ok) return;
+    const updated: Entry = await res.json();
+    subWheels = subWheels.map((sw) =>
+      sw.slug === subEditSlug
+        ? { ...sw, entries: sw.entries.map((e) => (e.id === updated.id ? updated : e)) }
+        : sw
+    );
+    cancelSubEdit();
+  }
+
+  async function moveSubEntry(slug: string, index: number, direction: -1 | 1) {
+    const sw = subWheels.find((s) => s.slug === slug);
+    if (!sw) return;
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= sw.entries.length) return;
+    const updated = [...sw.entries];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    subWheels = subWheels.map((s) => s.slug === slug ? { ...s, entries: updated } : s);
+    await fetch("/api/sub-entries", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ action: "reorder", slug, entries: updated }),
+    });
+  }
+
   // --- Spin History ---
   interface Spin {
     id: number;
@@ -283,6 +422,7 @@
       loadEntries();
       loadSubmissions();
       loadSpins();
+      loadSubWheels();
     }
   });
 </script>
@@ -584,5 +724,129 @@
         {/each}
       </ul>
     {/if}
+
+    <!-- Sub-wheels Section -->
+    <div class="bg-gray-800 rounded-2xl p-5 shadow-lg mt-8">
+      <h2 class="text-lg font-bold text-white mb-1">🎲 Sub-ruletas</h2>
+      <p class="text-gray-400 text-xs mb-4">
+        Las entradas de la ruleta principal con <code class="bg-gray-700 px-1 rounded">{"{placeholder}"}</code>
+        son reemplazadas al girar con una opción aleatoria de la sub-ruleta cuyo slug coincida.
+      </p>
+
+      <!-- Create new sub-wheel -->
+      <div class="flex gap-2 mb-5">
+        <input
+          type="text"
+          bind:value={newSubSlug}
+          placeholder="slug (ej: modo)"
+          maxlength={30}
+          class="w-32 px-3 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-500 border border-gray-600 focus:border-indigo-500 focus:outline-none text-sm"
+          onkeydown={(e) => { if (e.key === "Enter") createSubWheel(); }}
+        />
+        <input
+          type="text"
+          bind:value={newSubLabel}
+          placeholder="Nombre (ej: Modos de juego)"
+          maxlength={60}
+          class="flex-1 px-3 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-500 border border-gray-600 focus:border-indigo-500 focus:outline-none text-sm"
+          onkeydown={(e) => { if (e.key === "Enter") createSubWheel(); }}
+        />
+        <button
+          onclick={createSubWheel}
+          disabled={!newSubSlug.trim() || subSaving}
+          class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+        >
+          + Crear
+        </button>
+      </div>
+
+      {#if subWheels.length === 0}
+        <p class="text-gray-500 text-sm text-center py-4">
+          No hay sub-ruletas. Crea una arriba.
+        </p>
+      {:else}
+        <div class="space-y-3">
+          {#each subWheels as sw (sw.slug)}
+            <div class="bg-gray-750 border border-gray-700 rounded-xl overflow-hidden">
+              <!-- Sub-wheel header -->
+              <div class="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-gray-700/50 transition-colors"
+                onclick={() => { expandedSubWheel = expandedSubWheel === sw.slug ? null : sw.slug; }}>
+                <span class="text-gray-400 text-sm">{expandedSubWheel === sw.slug ? "▼" : "▶"}</span>
+                <span class="flex-1 text-white font-semibold">{sw.label}</span>
+                <code class="text-indigo-400 text-xs bg-gray-800 px-2 py-0.5 rounded">{"{" + sw.slug + "}"}</code>
+                <span class="text-gray-500 text-xs">{sw.entries.length} opciones</span>
+                <button
+                  class="text-gray-500 hover:text-red-400 text-xs ml-2 transition-colors"
+                  onclick={(e) => { e.stopPropagation(); deleteSubWheel(sw.slug); }}
+                >
+                  Eliminar
+                </button>
+              </div>
+
+              {#if expandedSubWheel === sw.slug}
+                <div class="border-t border-gray-700 px-4 py-3 space-y-2">
+                  <!-- Entry list -->
+                  {#if sw.entries.length === 0}
+                    <p class="text-gray-500 text-xs text-center py-2">Sin opciones aún.</p>
+                  {:else}
+                    <ul class="space-y-1">
+                      {#each sw.entries as entry, i (entry.id)}
+                        <li class="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2">
+                          <div class="flex flex-col gap-0.5 shrink-0">
+                            <button
+                              class="text-gray-500 hover:text-white text-xs leading-none disabled:opacity-30"
+                              disabled={i === 0}
+                              onclick={() => moveSubEntry(sw.slug, i, -1)}>▲</button>
+                            <button
+                              class="text-gray-500 hover:text-white text-xs leading-none disabled:opacity-30"
+                              disabled={i === sw.entries.length - 1}
+                              onclick={() => moveSubEntry(sw.slug, i, 1)}>▼</button>
+                          </div>
+                          <span class="text-gray-500 text-xs w-5 text-right shrink-0">{i + 1}.</span>
+                          {#if subEditId === entry.id && subEditSlug === sw.slug}
+                            <input
+                              type="text"
+                              bind:value={subEditText}
+                              maxlength={200}
+                              class="flex-1 px-2 py-1 rounded bg-gray-700 text-white border border-indigo-500 text-sm focus:outline-none"
+                              onkeydown={(e) => { if (e.key === "Enter") saveSubEdit(); if (e.key === "Escape") cancelSubEdit(); }}
+                            />
+                            <button class="text-green-400 hover:text-green-300 text-xs" onclick={saveSubEdit}>Guardar</button>
+                            <button class="text-gray-400 hover:text-gray-300 text-xs" onclick={cancelSubEdit}>Cancelar</button>
+                          {:else}
+                            <span class="flex-1 text-white text-sm">{entry.text}</span>
+                            <button class="text-gray-400 hover:text-indigo-400 text-xs shrink-0" onclick={() => startSubEdit(sw.slug, entry)}>Editar</button>
+                            <button class="text-gray-400 hover:text-red-400 text-xs shrink-0" onclick={() => deleteSubEntry(sw.slug, entry.id)}>Eliminar</button>
+                          {/if}
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+
+                  <!-- Add entry -->
+                  <div class="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      bind:value={newSubTexts[sw.slug]}
+                      placeholder="Nueva opción…"
+                      maxlength={200}
+                      class="flex-1 px-3 py-1.5 rounded-lg bg-gray-700 text-white placeholder-gray-500 border border-gray-600 focus:border-indigo-500 focus:outline-none text-sm"
+                      onkeydown={(e) => { if (e.key === "Enter") addSubEntry(sw.slug); }}
+                    />
+                    <button
+                      onclick={() => addSubEntry(sw.slug)}
+                      disabled={!(newSubTexts[sw.slug] ?? "").trim() || subSaving}
+                      class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
   {/if}
 </div>

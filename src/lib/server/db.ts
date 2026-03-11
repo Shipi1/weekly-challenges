@@ -26,12 +26,19 @@ export interface EntryRow {
   description?: string;
 }
 
+export interface SubWheelRow {
+  slug: string;    // matches {placeholder}, e.g. "modo"
+  label: string;   // display name, e.g. "Modos de juego"
+  entries: EntryRow[];
+}
+
 interface SpinData {
   nextId: number;
   spins: SpinRow[];
   nextMessageId: number;
   messages: MessageRow[];
   entries: EntryRow[];
+  subWheels: SubWheelRow[];
 }
 
 // --- Active auth tokens (in-memory, lost on restart = forced re-login) ---
@@ -64,6 +71,7 @@ function loadFromDisk(): SpinData {
       nextMessageId: 1,
       messages: [],
       entries: [],
+      subWheels: [],
     };
   }
   try {
@@ -91,6 +99,7 @@ function loadFromDisk(): SpinData {
       nextMessageId: data.nextMessageId ?? 1,
       messages: data.messages ?? [],
       entries: data.entries ?? [],
+      subWheels: data.subWheels ?? [],
     };
 
     if (migrated) {
@@ -105,6 +114,7 @@ function loadFromDisk(): SpinData {
       nextMessageId: 1,
       messages: [],
       entries: [],
+      subWheels: [],
     };
   }
 }
@@ -240,4 +250,80 @@ export function updateEntry(id: string, text: string, description?: string): Ent
   if (description !== undefined) entry.description = description.slice(0, 350);
   persist();
   return entry;
+}
+
+// --- Sub-wheels ---
+
+export function getAllSubWheels(): SubWheelRow[] {
+  return getData().subWheels;
+}
+
+export function getSubWheel(slug: string): SubWheelRow | undefined {
+  return getData().subWheels.find((sw) => sw.slug === slug);
+}
+
+export function createSubWheel(slug: string, label: string): SubWheelRow {
+  const data = getData();
+  const existing = data.subWheels.find((sw) => sw.slug === slug);
+  if (existing) return existing;
+  const sw: SubWheelRow = { slug: slug.toLowerCase().trim(), label: label.trim(), entries: [] };
+  data.subWheels.push(sw);
+  persist();
+  return sw;
+}
+
+export function deleteSubWheel(slug: string): void {
+  const data = getData();
+  data.subWheels = data.subWheels.filter((sw) => sw.slug !== slug);
+  persist();
+}
+
+export function addSubEntry(slug: string, text: string): EntryRow {
+  const data = getData();
+  let sw = data.subWheels.find((s) => s.slug === slug);
+  if (!sw) {
+    sw = { slug, label: slug, entries: [] };
+    data.subWheels.push(sw);
+  }
+  const entry: EntryRow = { id: randomUUID().split('-')[0], text: text.slice(0, 200) };
+  sw.entries.push(entry);
+  persist();
+  return entry;
+}
+
+export function removeSubEntry(slug: string, id: string): void {
+  const data = getData();
+  const sw = data.subWheels.find((s) => s.slug === slug);
+  if (!sw) return;
+  sw.entries = sw.entries.filter((e) => e.id !== id);
+  persist();
+}
+
+export function updateSubEntry(slug: string, id: string, text: string): EntryRow | null {
+  const data = getData();
+  const sw = data.subWheels.find((s) => s.slug === slug);
+  if (!sw) return null;
+  const entry = sw.entries.find((e) => e.id === id);
+  if (!entry) return null;
+  entry.text = text.slice(0, 200);
+  persist();
+  return entry;
+}
+
+export function setSubWheelEntries(slug: string, entries: EntryRow[]): SubWheelRow | null {
+  const data = getData();
+  const sw = data.subWheels.find((s) => s.slug === slug);
+  if (!sw) return null;
+  sw.entries = entries.map((e) => ({ id: e.id || randomUUID().split('-')[0], text: String(e.text).slice(0, 200) }));
+  persist();
+  return sw;
+}
+
+export function updateSubWheel(slug: string, label: string): SubWheelRow | null {
+  const data = getData();
+  const sw = data.subWheels.find((s) => s.slug === slug);
+  if (!sw) return null;
+  sw.label = label.trim();
+  persist();
+  return sw;
 }

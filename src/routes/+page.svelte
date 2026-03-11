@@ -6,6 +6,27 @@
 
   let justSpun = $state(false);
 
+  // Sub-wheels (for placeholder resolution)
+  interface SubWheelEntry { text: string }
+  interface SubWheel { slug: string; entries: SubWheelEntry[] }
+  let subWheels = $state<SubWheel[]>([]);
+
+  if (typeof window !== "undefined") {
+    fetch("/api/sub-entries")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: SubWheel[]) => { subWheels = data; })
+      .catch(() => {});
+  }
+
+  function resolvePlaceholders(text: string): string {
+    if (!text.includes("{")) return text;
+    return text.replace(/\{(\w+)\}/g, (match, slug) => {
+      const sw = subWheels.find((s) => s.slug === slug);
+      if (!sw || sw.entries.length === 0) return match;
+      return sw.entries[Math.floor(Math.random() * sw.entries.length)].text;
+    });
+  }
+
   // Messages
   interface Message {
     id: number;
@@ -56,12 +77,13 @@
 
   const onWheelStopped = (e: CustomEvent<OnStoppedData>) => {
     const { winner, color } = e.detail;
+    const resolvedText = resolvePlaceholders(winner.text);
     justSpun = true;
     launchConfetti(
       "fireworks",
       color ? [color] : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
     );
-    spinStore.saveResult(winner.text, color, winner.description).then(() => {
+    spinStore.saveResult(resolvedText, color, winner.description).then(() => {
       setTimeout(checkSync, 500);
     });
   };

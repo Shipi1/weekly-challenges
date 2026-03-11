@@ -1,6 +1,14 @@
 {
-  "nextId": 1,
-  "spins": [],
+  "nextId": 2,
+  "spins": [
+    {
+      "id": 1,
+      "winner_text": "Usar VI7",
+      "winner_color": "#6693fa",
+      "winner_description": "Integra el acorde VI7 como un dominante secundario para conducir la armonía. Tip: Utiliza su tercera mayor como nota de paso cromática para generar una tensión que resuelva con fluidez. El objetivo es añadir color y dirección a la progresión mediante este intercambio tonal.",
+      "timestamp": 1773250849145
+    }
+  ],
   "nextMessageId": 20,
   "messages": [],
   "entries": [
@@ -87,57 +95,57 @@
   ],
   "subWheels": [
     {
-      "slug": "modo",
+      "slug": "{modo}",
       "label": "Modos musicales",
       "entries": [
         {
-          "id": "135cf2a6",
+          "id": "12df288c",
           "text": "Lidio"
         },
         {
-          "id": "a673df67",
-          "text": "Frigio"
-        },
-        {
-          "id": "8bd33d38",
-          "text": "Mixolidio"
-        },
-        {
-          "id": "d9ccfd53",
-          "text": "Eólico"
-        },
-        {
-          "id": "c224c216",
+          "id": "67fe51df",
           "text": "Jónico"
         },
         {
-          "id": "ab673773",
-          "text": "Locrio"
+          "id": "cbc6cde8",
+          "text": "Dórico"
         },
         {
-          "id": "a82362a1",
-          "text": "Dórico"
+          "id": "232c8371",
+          "text": "Frigio"
+        },
+        {
+          "id": "acc6b00b",
+          "text": "Mixolidio"
+        },
+        {
+          "id": "e2a0e40e",
+          "text": "Eólico"
+        },
+        {
+          "id": "31045475",
+          "text": "Locrio"
         }
       ]
     },
     {
-      "slug": "compas",
+      "slug": "{compas}",
       "label": "Compas irregular",
       "entries": [
         {
-          "id": "aae573ea",
+          "id": "fa2f31c6",
           "text": "5/4"
         },
         {
-          "id": "4bc312db",
+          "id": "09f3eb76",
           "text": "7/8"
         },
         {
-          "id": "e2f7e0f6",
+          "id": "171121b6",
           "text": "11/8"
         },
         {
-          "id": "3620a3bc",
+          "id": "91fb97a8",
           "text": "13/8"
         }
       ]
