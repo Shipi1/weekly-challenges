@@ -138,6 +138,10 @@ function createSpinStore() {
     syncHistory(entries: SpinHistoryEntry[]) {
       store.value = { ...store.value, history: entries };
     },
+    /** Overwrite the displayed result without triggering a POST (used by SSE). */
+    setResult(result: SpinResult) {
+      store.value = { ...store.value, result };
+    },
     /** Re-fetch lock state from server (used by checkSync). */
     refreshLock,
     reset() {

@@ -273,6 +273,13 @@
       // Case 3: new spin from another device, or first time seeing this spin
       // (late-joining / reconnecting device).
       seenSpinId = data.id;
+      // Set result BEFORE justSpun so the popup renders with the correct winner,
+      // not whatever was previously persisted in localStorage on this device.
+      spinStore.setResult({
+        winnerText: data.winnerText,
+        winnerColor: data.winnerColor,
+        winnerDescription: data.winnerDescription,
+      });
       justSpun = true;
       launchConfetti(
         "fireworks",
@@ -280,7 +287,7 @@
           ? [data.winnerColor]
           : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
       );
-      // Silently refresh store so result data and lock state are up to date
+      // Silently refresh store so history and lock state are up to date
       await checkSync(true);
     });
 
