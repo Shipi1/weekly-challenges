@@ -7,6 +7,8 @@
 
   let justSpun = $state(false);
   let showEntries = $state(false);
+  // Tracks whether THIS device triggered the current spin (to avoid duplicate confetti)
+  let didSpinLocally = false;
 
   // --- Countdown to next Monday 8 AM ---
   interface Countdown {
@@ -147,6 +149,7 @@
     const { text: resolvedText, subs: resolvedSubs } = resolvePlaceholders(
       winner.text,
     );
+    didSpinLocally = true;
     justSpun = true;
     launchConfetti(
       "fireworks",
@@ -195,9 +198,11 @@
   let syncStatus = $state<SyncStatus>("checking");
   let syncDetails = $state("");
 
-  async function checkSync() {
-    syncStatus = "checking";
-    syncDetails = "";
+  async function checkSync(silent = false) {
+    if (!silent) {
+      syncStatus = "checking";
+      syncDetails = "";
+    }
     try {
       const [spinsRes, msgsRes] = await Promise.all([
         fetch("/api/spins"),
@@ -215,11 +220,15 @@
       await spinStore.refreshLock();
       messages = serverMsgs;
 
-      syncStatus = "synced";
-      syncDetails = `${serverSpins.length} spin(s), ${serverMsgs.length} message(s)`;
+      if (!silent) {
+        syncStatus = "synced";
+        syncDetails = `${serverSpins.length} spin(s), ${serverMsgs.length} message(s)`;
+      }
     } catch (e) {
-      syncStatus = "error";
-      syncDetails = e instanceof Error ? e.message : "Unknown error";
+      if (!silent) {
+        syncStatus = "error";
+        syncDetails = e instanceof Error ? e.message : "Unknown error";
+      }
     }
   }
 
@@ -228,6 +237,40 @@
     // Small delay so stores finish their own server fetches first
     setTimeout(checkSync, 1500);
   }
+
+  // --- Real-time SSE: sync winner popup across all devices ---
+  $effect(() => {
+    const es = new EventSource("/api/events");
+
+    es.addEventListener("spin", async (e: MessageEvent) => {
+      const data = JSON.parse(e.data) as {
+        winnerText: string;
+        winnerColor: string | null;
+        winnerDescription?: string;
+        timestamp: number;
+      };
+      justSpun = true;
+      // Show confetti only on devices that didn't trigger the spin
+      if (!didSpinLocally) {
+        launchConfetti(
+          "fireworks",
+          data.winnerColor
+            ? [data.winnerColor]
+            : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
+        );
+      }
+      didSpinLocally = false;
+      // Silently refresh store so result data and lock state are up to date
+      await checkSync(true);
+    });
+
+    es.addEventListener("lock", () => {
+      // Admin reset the lock — update canSpin on all devices
+      spinStore.refreshLock();
+    });
+
+    return () => es.close();
+  });
 </script>
 
 <svelte:head>

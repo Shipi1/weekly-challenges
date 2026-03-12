@@ -5,6 +5,7 @@ import {
   getDebugMode,
   validateSession,
 } from "$lib/server/db";
+import { broadcastEvent } from "$lib/server/sse";
 import type { RequestHandler } from "./$types";
 
 /** Public — returns whether the wheel is currently locked.
@@ -23,5 +24,7 @@ export const PUT: RequestHandler = async ({ request }) => {
   const body = await request.json();
   setSpinLock(!!body.locked);
   const locked = !getDebugMode() && getSpinLock();
+  // Notify all clients so the wheel unlocks in real-time
+  broadcastEvent("lock", { locked });
   return json({ locked, raw: getSpinLock() });
 };

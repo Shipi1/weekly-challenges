@@ -10,6 +10,7 @@ import {
   removeSubEntry,
   setSpinLock,
 } from "$lib/server/db";
+import { broadcastEvent } from "$lib/server/sse";
 import type { RequestHandler } from "./$types";
 
 export const GET: RequestHandler = () => {
@@ -55,6 +56,14 @@ export const POST: RequestHandler = async ({ request }) => {
 
   // Lock the wheel for all users until admin resets it
   setSpinLock(true);
+
+  // Notify every connected client in real-time
+  broadcastEvent("spin", {
+    winnerText: row.winner_text,
+    winnerColor: row.winner_color,
+    winnerDescription: row.winner_description,
+    timestamp: row.timestamp,
+  });
 
   // Remove winner from the pool permanently
   if (typeof entryId === "string") removeEntry(entryId);
