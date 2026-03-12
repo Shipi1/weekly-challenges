@@ -59,6 +59,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
   // Notify every connected client in real-time
   broadcastEvent("spin", {
+    id: row.id,
     winnerText: row.winner_text,
     winnerColor: row.winner_color,
     winnerDescription: row.winner_description,
@@ -77,6 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
   return json(
     {
+      id: row.id,
       winnerText: row.winner_text,
       winnerColor: row.winner_color,
       winnerDescription: row.winner_description,

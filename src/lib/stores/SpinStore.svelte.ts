@@ -81,7 +81,7 @@ function createSpinStore() {
       winnerDescription?: string,
       entryId?: string,
       resolvedSubEntries?: { slug: string; id: string }[],
-    ) {
+    ): Promise<number | null> {
       const now = Date.now();
       const entry: SpinHistoryEntry = {
         winnerText,
@@ -98,7 +98,9 @@ function createSpinStore() {
         history: [entry, ...(store.value.history ?? [])],
       };
 
-      // Persist to server in background
+      // Persist to server in background — return the spin ID so the caller
+      // can identify its own SSE event and skip duplicate confetti/popup.
+      let savedId: number | null = null;
       try {
         const res = await fetch("/api/spins", {
           method: "POST",
@@ -106,6 +108,8 @@ function createSpinStore() {
           body: JSON.stringify({ winnerText, winnerColor, winnerDescription, entryId, resolvedSubEntries }),
         });
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const data = await res.json();
+        savedId = typeof data.id === "number" ? data.id : null;
         // Mark the entry as synced
         store.value = {
           ...store.value,
@@ -121,6 +125,7 @@ function createSpinStore() {
 
       // Refresh lock — server sets it to true in PROD mode after a spin
       await refreshLock();
+      return savedId;
     },
     async clearHistory() {
       store.value = { ...store.value, history: [] };

@@ -7,8 +7,13 @@
 
   let justSpun = $state(false);
   let showEntries = $state(false);
-  // Tracks whether THIS device triggered the current spin (to avoid duplicate confetti)
-  let didSpinLocally = false;
+  // ID returned by the server after THIS device's POST /api/spins.
+  // Used to recognise our own SSE echo and skip duplicate confetti/popup.
+  let localSpinId: number | null = null;
+  // ID of the last spin event we already showed a popup for.
+  // Prevents showing the same winner again if the SSE connection reconnects
+  // while the wheel is still locked.
+  let seenSpinId: number | null = null;
 
   // --- Countdown to next Monday 8 AM ---
   interface Countdown {
@@ -149,7 +154,6 @@
     const { text: resolvedText, subs: resolvedSubs } = resolvePlaceholders(
       winner.text,
     );
-    didSpinLocally = true;
     justSpun = true;
     launchConfetti(
       "fireworks",
@@ -176,7 +180,9 @@
         winner.id,
         resolvedSubs,
       )
-      .then(() => {
+      .then((spinId) => {
+        // Store the server-assigned ID so the SSE echo can be identified
+        if (spinId !== null) localSpinId = spinId;
         setTimeout(checkSync, 500);
       });
   };
@@ -244,22 +250,36 @@
 
     es.addEventListener("spin", async (e: MessageEvent) => {
       const data = JSON.parse(e.data) as {
+        id: number;
         winnerText: string;
         winnerColor: string | null;
         winnerDescription?: string;
         timestamp: number;
       };
-      justSpun = true;
-      // Show confetti only on devices that didn't trigger the spin
-      if (!didSpinLocally) {
-        launchConfetti(
-          "fireworks",
-          data.winnerColor
-            ? [data.winnerColor]
-            : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
-        );
+
+      // Case 1: this device triggered the spin — the popup is already visible,
+      // just mark the server ID as seen and skip duplicate confetti.
+      if (localSpinId !== null && data.id === localSpinId) {
+        localSpinId = null;
+        seenSpinId = data.id;
+        await checkSync(true);
+        return;
       }
-      didSpinLocally = false;
+
+      // Case 2: SSE reconnect replayed the same spin we already showed
+      // (spinLock still true while the user has the page open).
+      if (seenSpinId === data.id) return;
+
+      // Case 3: new spin from another device, or first time seeing this spin
+      // (late-joining / reconnecting device).
+      seenSpinId = data.id;
+      justSpun = true;
+      launchConfetti(
+        "fireworks",
+        data.winnerColor
+          ? [data.winnerColor]
+          : ["#6693fa", "#eb6574", "#f5d273", "#6be88a"],
+      );
       // Silently refresh store so result data and lock state are up to date
       await checkSync(true);
     });

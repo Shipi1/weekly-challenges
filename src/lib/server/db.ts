@@ -150,6 +150,14 @@ export function getAllSpins(): SpinRow[] {
   return data.spins.toSorted((a, b) => b.timestamp - a.timestamp).slice(0, 500);
 }
 
+export function getLastSpin(): SpinRow | null {
+  const data = getData();
+  if (data.spins.length === 0) return null;
+  return data.spins.reduce((latest, s) =>
+    s.timestamp > latest.timestamp ? s : latest,
+  );
+}
+
 export function insertSpin(
   winnerText: string,
   winnerColor: string | null,
