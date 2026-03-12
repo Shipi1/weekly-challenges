@@ -12,7 +12,9 @@ let serverFetchDone = false;
 const createWheelStore = (state: WheelStoreData) => {
   const store = persistedState("wheel", state);
 
-  // Load entries from server (source of truth). Fall back to entries.txt defaults.
+  // Load entries from server (source of truth).
+  // On deployment, spins.json is the source of truth — entries.txt is only used as the
+  // initial localStorage default for local dev when no server entries exist yet.
   if (typeof window !== "undefined") {
     fetch("/api/entries")
       .then((r) => {
@@ -22,20 +24,13 @@ const createWheelStore = (state: WheelStoreData) => {
       .then((data: Entry[]) => {
         // Only overwrite if the user hasn't already spun (i.e. entries haven't been filtered yet)
         if (!serverFetchDone) {
-          if (data.length > 0) {
-            store.value = { ...store.value, entries: data };
-          } else {
-            // Server has no entries yet — use entries.txt defaults
-            store.value = { ...store.value, entries: defaultEntries };
-          }
+          // Always use server data (even if empty) — server is the source of truth on deployment
+          store.value = { ...store.value, entries: data };
         }
         serverFetchDone = true;
       })
       .catch(() => {
-        if (!serverFetchDone) {
-          // Server unreachable — use entries.txt defaults
-          store.value = { ...store.value, entries: defaultEntries };
-        }
+        // Server unreachable — keep whatever is in localStorage, don't overwrite with entries.txt
         serverFetchDone = true;
       });
   }

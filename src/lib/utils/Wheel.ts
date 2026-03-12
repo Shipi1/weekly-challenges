@@ -5,7 +5,7 @@ import {
   tick,
   type WheelState,
 } from "$lib/utils/WheelState";
-import entriesRaw from "../../../entries.txt?raw";
+import entriesRaw from "../../../entries.json";
 
 export default class Wheel {
   config: WheelConfig;
@@ -118,8 +118,8 @@ export const addIdsToEntries = (entries: Omit<Entry, "id">[]) => {
 
 export const getNewEntryId = () => crypto.randomUUID().split("-")[0];
 
-export const defaultEntries: Entry[] = entriesRaw
-  .split("\n")
-  .map((line) => line.trim())
-  .filter((line) => line.length > 0)
-  .map((text) => ({ text, id: getNewEntryId() }));
+export const defaultEntries: Entry[] = (
+  entriesRaw as { text: string; description?: string }[]
+)
+  .filter((e) => e.text?.trim().length > 0)
+  .map((e) => ({ id: getNewEntryId(), text: e.text.trim(), description: e.description?.trim() || undefined }));
