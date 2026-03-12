@@ -1,42 +1,6 @@
 {
-  "nextId": 6,
-  "spins": [
-    {
-      "id": 1,
-      "winner_text": "Utilizar máximo 4 tracks",
-      "winner_color": "#6693fa",
-      "winner_description": "Compón una pieza sonora utilizando únicamente cuatro pistas de audio o MIDI.",
-      "timestamp": 1773270663756
-    },
-    {
-      "id": 2,
-      "winner_text": "Samplear elementos de tu cocina",
-      "winner_color": "#6693fa",
-      "winner_description": "Crea una composición rítmica o melódica utilizando únicamente grabaciones de objetos domésticos. Captura texturas, percusiones y resonancias metálicas o de vidrio para transformarlas en instrumentos musicales. El objetivo es resignificar sonidos cotidianos en una pieza sonora coherente.",
-      "timestamp": 1773270688238
-    },
-    {
-      "id": 3,
-      "winner_text": "Usar Blackadder Chord",
-      "winner_color": "#6be88a",
-      "winner_description": "Integra el acorde Blackadder (1, b2, b5, bb7) para generar una sonoridad densa, disonante y oscura. Utiliza este acorde de cuarta disminuida para crear puntos de tensión extrema que contrasten con la armonía principal. El objetivo es explorar texturas cromáticas complejas y resolver en atmósferas inesperadas.\n\nhttps://youtu.be/LApXYOeD-6c",
-      "timestamp": 1773270701170
-    },
-    {
-      "id": 4,
-      "winner_text": "Usar el modo Locrio",
-      "winner_color": "#6be88a",
-      "winner_description": "Compón una pieza musical centrada en una sonoridad modal específica. Utiliza sus notas características para definir el color armónico y la estructura melódica sin recurrir a las cadencias tradicionales de la tonalidad mayor o menor. El objetivo es explorar atmósferas sonoras únicas.",
-      "timestamp": 1773270728209
-    },
-    {
-      "id": 5,
-      "winner_text": "Componer sin usar el primer grado",
-      "winner_color": "#eb6574",
-      "winner_description": "Compón una pieza musical omitiendo por completo el acorde de resolución o reposo tonal. Utiliza progresiones circulares, cadencias rotas o modos que mantengan una tensión constante y una sensación de movimiento perpetuo. El objetivo es explorar la narrativa sonora sin llegar nunca a un punto de descanso definitivo.",
-      "timestamp": 1773270771627
-    }
-  ],
+  "nextId": 1,
+  "spins": [],
   "nextMessageId": 20,
   "messages": [],
   "entries": [
@@ -46,9 +10,19 @@
       "description": "Compón una pieza musical utilizando un fragmento de una obra existente como núcleo creativo. Manipula el audio mediante técnicas de picado, estiramiento temporal o cambio de tono para generar un contexto sonoro nuevo. El objetivo es recontextualizar la fuente original en una narrativa musical propia."
     },
     {
+      "id": "58a8d948",
+      "text": "Componer sin usar el primer grado",
+      "description": "Compón una pieza musical omitiendo por completo el acorde de resolución o reposo tonal. Utiliza progresiones circulares, cadencias rotas o modos que mantengan una tensión constante y una sensación de movimiento perpetuo. El objetivo es explorar la narrativa sonora sin llegar nunca a un punto de descanso definitivo."
+    },
+    {
       "id": "c4d6e8e3",
       "text": "Uso del acorde Menor Maj7",
       "description": "Emplea el acorde Menor (Maj7) para introducir una sonoridad sofisticada, nocturna y de tensión cinematográfica. Utiliza la séptima mayor como nota guía para crear líneas melódicas cromáticas o resoluciones elegantes. El objetivo es enriquecer la textura armónica con su carácter híbrido y misterioso."
+    },
+    {
+      "id": "0091f311",
+      "text": "Usar Blackadder Chord",
+      "description": "Integra el acorde Blackadder (1, b2, b5, bb7) para generar una sonoridad densa, disonante y oscura. Utiliza este acorde de cuarta disminuida para crear puntos de tensión extrema que contrasten con la armonía principal. El objetivo es explorar texturas cromáticas complejas y resolver en atmósferas inesperadas.\n\nhttps://youtu.be/LApXYOeD-6c"
     },
     {
       "id": "c8f1c60f",
@@ -76,6 +50,16 @@
       "description": "Compón una pieza musical completa en un tiempo límite de una hora. Toma decisiones rápidas de armonía, ritmo y estructura sin detenerte en detalles técnicos profundos. El objetivo es potenciar la intuición creativa y la toma de decisiones eficiente para finalizar una obra bajo presión."
     },
     {
+      "id": "505dba8e",
+      "text": "Utilizar máximo 4 tracks",
+      "description": "Compón una pieza sonora utilizando únicamente cuatro pistas de audio o MIDI."
+    },
+    {
+      "id": "8b0e60dd",
+      "text": "Samplear elementos de tu cocina",
+      "description": "Crea una composición rítmica o melódica utilizando únicamente grabaciones de objetos domésticos. Captura texturas, percusiones y resonancias metálicas o de vidrio para transformarlas en instrumentos musicales. El objetivo es resignificar sonidos cotidianos en una pieza sonora coherente."
+    },
+    {
       "id": "df7bd2ac",
       "text": "Composición sorda",
       "description": "Crea una pieza musical basándote exclusivamente en la representación visual. Sin usar el monitoreo de audio, organiza estructuras, ritmos y armonías guiado por la teoría y la lógica visual. El objetivo es confiar en el oído interno para estructurar la obra antes de escucharla."
@@ -94,6 +78,11 @@
       "id": "8a331c87",
       "text": "Usar compás irregular de {compas}",
       "description": "Compón una pieza musical utilizando metros irregulares. Organiza las subdivisiones internas para crear acentuaciones asimétricas y ritmos que rompan con la cuadratura tradicional. El objetivo es explorar nuevas dinámicas de movimiento y fluidez rítmica fuera del estándar binario o ternario."
+    },
+    {
+      "id": "f9807ba0",
+      "text": "Usar el modo {modo}",
+      "description": "Compón una pieza musical centrada en una sonoridad modal específica. Utiliza sus notas características para definir el color armónico y la estructura melódica sin recurrir a las cadencias tradicionales de la tonalidad mayor o menor. El objetivo es explorar atmósferas sonoras únicas."
     }
   ],
   "subWheels": [
@@ -120,6 +109,10 @@
         {
           "id": "c224c216",
           "text": "Jónico"
+        },
+        {
+          "id": "ab673773",
+          "text": "Locrio"
         },
         {
           "id": "a82362a1",
@@ -149,6 +142,5 @@
         }
       ]
     }
-  ],
-  "debugMode": false
+  ]
 }

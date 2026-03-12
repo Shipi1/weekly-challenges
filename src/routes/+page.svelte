@@ -1,27 +1,87 @@
 <script lang="ts">
   import Wheel from "$lib/components/Wheel.svelte";
-  import spinStore, { DISABLE_SPIN_LOCK } from "$lib/stores/SpinStore.svelte";
+  import spinStore from "$lib/stores/SpinStore.svelte";
   import wheelStore from "$lib/stores/WheelStore";
   import { launchConfetti } from "$lib/utils/ConfettiLauncher";
   import type { OnStoppedData } from "$lib/utils/Wheel";
 
   let justSpun = $state(false);
+  let showEntries = $state(false);
+
+  // --- Countdown to next Monday 8 AM ---
+  interface Countdown {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }
+  let countdown = $state<Countdown>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  function getNextMonday8AM(): Date {
+    const now = new Date();
+    const next = new Date(now);
+    // getDay(): 0=Sun,1=Mon,...,6=Sat — days until next Monday
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+    next.setDate(now.getDate() + daysUntilMonday);
+    next.setHours(8, 0, 0, 0);
+    return next;
+  }
+
+  function updateCountdown() {
+    const diff = getNextMonday8AM().getTime() - Date.now();
+    if (diff <= 0) {
+      countdown = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      return;
+    }
+    countdown = {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff % 86400000) / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+    };
+  }
+
+  if (typeof window !== "undefined") {
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    // cleanup on component destroy
+    $effect(() => () => clearInterval(timer));
+  }
 
   // Sub-wheels (for placeholder resolution)
-  interface SubWheelEntry { id: string; text: string }
-  interface SubWheel { slug: string; entries: SubWheelEntry[] }
+  interface SubWheelEntry {
+    id: string;
+    text: string;
+  }
+  interface SubWheel {
+    slug: string;
+    entries: SubWheelEntry[];
+  }
   let subWheels = $state<SubWheel[]>([]);
 
   if (typeof window !== "undefined") {
     fetch("/api/sub-entries")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: SubWheel[]) => { subWheels = data; })
+      .then((data: SubWheel[]) => {
+        subWheels = data;
+      })
       .catch(() => {});
   }
 
-  interface ResolvedSub { slug: string; id: string }
+  interface ResolvedSub {
+    slug: string;
+    id: string;
+  }
 
-  function resolvePlaceholders(text: string): { text: string; subs: ResolvedSub[] } {
+  function resolvePlaceholders(text: string): {
+    text: string;
+    subs: ResolvedSub[];
+  } {
     const subs: ResolvedSub[] = [];
     if (!text.includes("{")) return { text, subs };
     const resolved = text.replace(/\{(\w+)\}/g, (match, slug) => {
@@ -84,7 +144,9 @@
 
   const onWheelStopped = (e: CustomEvent<OnStoppedData>) => {
     const { winner, color } = e.detail;
-    const { text: resolvedText, subs: resolvedSubs } = resolvePlaceholders(winner.text);
+    const { text: resolvedText, subs: resolvedSubs } = resolvePlaceholders(
+      winner.text,
+    );
     justSpun = true;
     launchConfetti(
       "fireworks",
@@ -103,9 +165,17 @@
       }));
     }
 
-    spinStore.saveResult(resolvedText, color, winner.description, winner.id, resolvedSubs).then(() => {
-      setTimeout(checkSync, 500);
-    });
+    spinStore
+      .saveResult(
+        resolvedText,
+        color,
+        winner.description,
+        winner.id,
+        resolvedSubs,
+      )
+      .then(() => {
+        setTimeout(checkSync, 500);
+      });
   };
 
   function formatDate(timestamp: number): string {
@@ -142,6 +212,7 @@
       spinStore.syncHistory(
         serverSpins.map((e: any) => ({ ...e, synced: true })),
       );
+      await spinStore.refreshLock();
       messages = serverMsgs;
 
       syncStatus = "synced";
@@ -173,8 +244,7 @@
     <div class="flex-1 flex flex-col items-center gap-6">
       {#if spinStore.canSpin && !justSpun}
         <p class="text-lg text-gray-300 text-center">
-          Click the wheel to spin!{#if !DISABLE_SPIN_LOCK}
-            You get one spin per week.{/if}
+          Click the wheel to spin!
         </p>
         <div class="w-full max-w-lg">
           <Wheel on:stop={onWheelStopped} />
@@ -187,7 +257,7 @@
 
           {#if spinStore.result}
             <div
-              class="absolute inset-0 flex items-center justify-center z-10 lg:relative lg:inset-auto lg:mt-6"
+              class="absolute inset-0 flex items-center justify-center z-10 lg:relative lg:inset-auto lg:mt-6 lg:flex lg:justify-center"
             >
               <div
                 class="text-center space-y-3 bg-gray-900/80 backdrop-blur-sm rounded-2xl p-6 lg:bg-transparent lg:backdrop-blur-none lg:p-0"
@@ -205,7 +275,7 @@
                   {spinStore.result.winnerText}
                 </div>
                 {#if spinStore.result.winnerDescription}
-                  <p class="text-sm text-gray-300 mt-3 text-center max-w-sm">
+                  <p class="text-sm text-gray-300 mt-3 text-center max-w-sm mx-auto">
                     {spinStore.result.winnerDescription}
                   </p>
                 {/if}
@@ -214,22 +284,90 @@
                     Spun on {spinStore.weekLabel}
                   </p>
                 {/if}
-                {#if !DISABLE_SPIN_LOCK}
-                  <p class="text-gray-400 mt-4">
-                    Come back next week for another spin! 🎉
-                  </p>
+                {#if !spinStore.canSpin}
+                  <div class="mt-4 space-y-2">
+                    <p class="text-gray-300 text-sm">
+                      ⏳ Tienes una semana para realizar este desafío!
+                    </p>
+                    <div
+                      class="flex items-center justify-center gap-2 text-center"
+                    >
+                      {#each [{ value: countdown.days, label: "días" }, { value: countdown.hours, label: "hrs" }, { value: countdown.minutes, label: "min" }, { value: countdown.seconds, label: "seg" }] as unit}
+                        <div
+                          class="bg-gray-800 rounded-xl px-3 py-2 min-w-[3.5rem]"
+                        >
+                          <p
+                            class="text-2xl font-bold text-white tabular-nums leading-none"
+                          >
+                            {String(unit.value).padStart(2, "0")}
+                          </p>
+                          <p class="text-gray-500 text-[10px] mt-0.5">
+                            {unit.label}
+                          </p>
+                        </div>
+                        {#if unit.label !== "seg"}
+                          <span class="text-gray-600 font-bold text-lg pb-3"
+                            >:</span
+                          >
+                        {/if}
+                      {/each}
+                    </div>
+                  </div>
+                {:else}
+                  <button
+                    class="mt-4 px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+                    onclick={() => (justSpun = false)}
+                  >
+                    🔄 Spin Again
+                  </button>
                 {/if}
-                <button
-                  class="mt-4 px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
-                  onclick={() => (justSpun = false)}
-                >
-                  🔄 Spin Again
-                </button>
               </div>
             </div>
           {/if}
         </div>
       {/if}
+      <!-- Proposals button -->
+      <div class="w-full max-w-lg">
+        <button
+          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-sm font-medium transition-colors"
+          onclick={() => (showEntries = !showEntries)}
+        >
+          <span
+            >📋 Ver propuestas en la ruleta ({wheelStore.entries.length})</span
+          >
+          <span class="text-gray-500 text-xs">{showEntries ? "▲" : "▼"}</span>
+        </button>
+
+        {#if showEntries}
+          <div class="mt-2 bg-gray-800 rounded-xl overflow-hidden">
+            <ul class="max-h-72 overflow-y-auto divide-y divide-gray-700/50">
+              {#each wheelStore.entries as entry, i}
+                <li
+                  class="flex items-start gap-3 px-4 py-2.5 hover:bg-gray-700/40 transition-colors"
+                >
+                  <span class="text-gray-500 text-xs w-5 shrink-0 pt-0.5"
+                    >{i + 1}</span
+                  >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-white text-sm font-medium leading-snug">
+                      {entry.text}
+                    </p>
+                    {#if entry.description}
+                      <p class="text-gray-400 text-xs mt-0.5 line-clamp-2">
+                        {entry.description}
+                      </p>
+                    {/if}
+                  </div>
+                </li>
+              {:else}
+                <li class="px-4 py-4 text-center text-gray-500 text-sm">
+                  No hay propuestas en la ruleta.
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
+      </div>
     </div>
 
     <!-- Right: Spin History + Messages -->

@@ -8,6 +8,7 @@ import {
   getDebugMode,
   removeEntry,
   removeSubEntry,
+  setSpinLock,
 } from "$lib/server/db";
 import type { RequestHandler } from "./$types";
 
@@ -51,6 +52,9 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   const row = insertSpin(winnerText, winnerColor ?? null, winnerDescription ?? undefined);
+
+  // Lock the wheel for all users until admin resets it
+  setSpinLock(true);
 
   // Remove winner from the pool permanently
   if (typeof entryId === "string") removeEntry(entryId);

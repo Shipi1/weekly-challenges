@@ -358,6 +358,37 @@
     });
   }
 
+  // --- Spin lock ---
+  let spinLocked = $state(false);
+  let spinLockToggling = $state(false);
+
+  async function loadSpinLock() {
+    try {
+      const res = await fetch("/api/spin-lock");
+      if (!res.ok) return;
+      const data = await res.json();
+      spinLocked = data.raw ?? data.locked;
+    } catch {}
+  }
+
+  async function resetSpinLock() {
+    if (spinLockToggling) return;
+    spinLockToggling = true;
+    try {
+      const res = await fetch("/api/spin-lock", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ locked: false }),
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) return;
+      const data = await res.json();
+      spinLocked = data.raw ?? false;
+    } finally {
+      spinLockToggling = false;
+    }
+  }
+
   // --- Debug mode ---
   let debugMode = $state(false);
   let debugToggling = $state(false);
@@ -455,6 +486,7 @@
       loadSpins();
       loadSubWheels();
       loadDebugMode();
+      loadSpinLock();
     }
   });
 </script>
@@ -606,6 +638,34 @@
             </button>
           {/if}
         </div>
+      </div>
+
+      <!-- Spin Lock status + reset -->
+      <div class="flex items-center justify-between px-3 py-2.5 rounded-xl mb-4
+        {spinLocked ? 'bg-red-900/30 border border-red-700/40' : 'bg-green-900/20 border border-green-700/30'}">
+        <div class="flex items-center gap-2">
+          <span class="text-base">{spinLocked ? '🔒' : '🔓'}</span>
+          <div>
+            <p class="text-sm font-semibold {spinLocked ? 'text-red-300' : 'text-green-300'}">
+              {spinLocked ? 'Wheel locked' : 'Wheel open'}
+            </p>
+            <p class="text-xs text-gray-400">
+              {spinLocked
+                ? 'Users cannot spin. Reset to allow a new spin.'
+                : 'Users can spin freely.'}
+              {#if debugMode}<span class="text-yellow-400"> (bypassed in DEBUG)</span>{/if}
+            </p>
+          </div>
+        </div>
+        {#if spinLocked}
+          <button
+            onclick={resetSpinLock}
+            disabled={spinLockToggling}
+            class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs font-semibold transition-colors shrink-0"
+          >
+            {spinLockToggling ? '…' : '🔓 Unlock'}
+          </button>
+        {/if}
       </div>
 
       {#if spins.length === 0}

@@ -40,6 +40,7 @@ interface SpinData {
   entries: EntryRow[];
   subWheels: SubWheelRow[];
   debugMode: boolean;
+  spinLock: boolean; // true = wheel locked for all users until admin resets
 }
 
 // --- Active auth tokens (in-memory, lost on restart = forced re-login) ---
@@ -74,6 +75,7 @@ function loadFromDisk(): SpinData {
       entries: [],
       subWheels: [],
       debugMode: false,
+      spinLock: false,
     };
   }
   try {
@@ -103,6 +105,7 @@ function loadFromDisk(): SpinData {
       entries: data.entries ?? [],
       subWheels: data.subWheels ?? [],
       debugMode: data.debugMode ?? false,
+      spinLock: data.spinLock ?? false,
     };
 
     if (migrated) {
@@ -119,6 +122,7 @@ function loadFromDisk(): SpinData {
       entries: [],
       subWheels: [],
       debugMode: false,
+      spinLock: false,
     };
   }
 }
@@ -341,5 +345,17 @@ export function getDebugMode(): boolean {
 export function setDebugMode(value: boolean): void {
   const data = getData();
   data.debugMode = value;
+  persist();
+}
+
+// --- Spin lock ---
+
+export function getSpinLock(): boolean {
+  return getData().spinLock;
+}
+
+export function setSpinLock(value: boolean): void {
+  const data = getData();
+  data.spinLock = value;
   persist();
 }
