@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { resolve } from "path";
 import { randomUUID } from "crypto";
 
-const DATA_DIR = resolve("data");
+export const DATA_DIR = resolve("data");
 const DB_PATH = resolve(DATA_DIR, "spins.json");
 
 export interface SpinRow {
@@ -346,6 +346,12 @@ export function setDebugMode(value: boolean): void {
   const data = getData();
   data.debugMode = value;
   persist();
+}
+
+// --- Cache control ---
+
+export function reloadCache(): void {
+  cache = null;
 }
 
 // --- Spin lock ---

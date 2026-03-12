@@ -420,6 +420,97 @@
     }
   }
 
+  // --- Data Files ---
+  interface DataFile {
+    name: string;
+    size: number;
+    modified: number;
+    active: boolean;
+  }
+  let dataFiles = $state<DataFile[]>([]);
+  let dataFilesLoading = $state(false);
+  let activatingFile = $state<string | null>(null);
+  let uploadingFile = $state(false);
+  let uploadError = $state("");
+  let uploadSuccess = $state("");
+  let fileInputRef = $state<HTMLInputElement | null>(null);
+
+  async function loadDataFiles() {
+    dataFilesLoading = true;
+    try {
+      const res = await fetch("/api/data-files");
+      if (!res.ok) return;
+      dataFiles = await res.json();
+    } catch {
+      dataFiles = [];
+    } finally {
+      dataFilesLoading = false;
+    }
+  }
+
+  async function uploadDataFile(file: File) {
+    uploadError = "";
+    uploadSuccess = "";
+    uploadingFile = true;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/data-files", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        uploadError = err.message ?? "Error al subir el archivo";
+        return;
+      }
+      const data = await res.json();
+      uploadSuccess = `✓ "${data.name}" subido correctamente`;
+      await loadDataFiles();
+    } catch {
+      uploadError = "Error de conexión";
+    } finally {
+      uploadingFile = false;
+      if (fileInputRef) fileInputRef.value = "";
+    }
+  }
+
+  async function activateDataFile(filename: string) {
+    if (!confirm(`¿Activar "${filename}" como base de datos activa?\n\nSe creará un backup del spins.json actual automáticamente.`)) return;
+    activatingFile = filename;
+    uploadError = "";
+    uploadSuccess = "";
+    try {
+      const res = await fetch("/api/data-files", {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ filename }),
+      });
+      if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        uploadError = err.message ?? "Error al activar el archivo";
+        return;
+      }
+      uploadSuccess = `✓ "${filename}" activado. Recargando datos…`;
+      await loadDataFiles();
+      // Reload all data from server since active DB changed
+      await Promise.all([loadEntries(), loadSubmissions(), loadSpins(), loadSubWheels(), loadDebugMode(), loadSpinLock()]);
+    } catch {
+      uploadError = "Error de conexión";
+    } finally {
+      activatingFile = null;
+    }
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   // --- Spin History ---
   interface Spin {
     id: number;
@@ -487,6 +578,7 @@
       loadSubWheels();
       loadDebugMode();
       loadSpinLock();
+      loadDataFiles();
     }
   });
 </script>
@@ -501,19 +593,27 @@
   <div class="flex items-center justify-between">
     <a href="/" class="text-indigo-400 hover:underline text-sm">← Back to Wheel</a>
     {#if loggedIn}
-      <button
-        onclick={toggleDebugMode}
-        disabled={debugToggling}
-        title={debugMode ? "Cambiar a Producción" : "Cambiar a Debug"}
-        class="flex items-center gap-2 disabled:opacity-50"
-      >
-        <span class="text-xs font-semibold {debugMode ? 'text-yellow-400' : 'text-green-400'}">
-          {debugMode ? "DEBUG" : "PROD"}
-        </span>
-        <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors {debugMode ? 'bg-yellow-500' : 'bg-green-600'}">
-          <span class="inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform {debugMode ? 'translate-x-6' : 'translate-x-1'}"></span>
-        </span>
-      </button>
+      <div class="flex items-center gap-4">
+        <button
+          onclick={toggleDebugMode}
+          disabled={debugToggling}
+          title={debugMode ? "Cambiar a Producción" : "Cambiar a Debug"}
+          class="flex items-center gap-2 disabled:opacity-50"
+        >
+          <span class="text-xs font-semibold {debugMode ? 'text-yellow-400' : 'text-green-400'}">
+            {debugMode ? "DEBUG" : "PROD"}
+          </span>
+          <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors {debugMode ? 'bg-yellow-500' : 'bg-green-600'}">
+            <span class="inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform {debugMode ? 'translate-x-6' : 'translate-x-1'}"></span>
+          </span>
+        </button>
+        <button
+          class="text-xs text-gray-400 hover:text-red-400 transition-colors"
+          onclick={logout}
+        >
+          Logout
+        </button>
+      </div>
     {/if}
   </div>
 
@@ -549,6 +649,96 @@
       </form>
     </div>
   {:else}
+    <!-- Data Files Manager -->
+    <div class="bg-gray-800 rounded-2xl p-5 shadow-lg mb-8">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white">📁 Archivos de datos</h2>
+          <p class="text-gray-400 text-xs mt-0.5">Sube un <code class="bg-gray-700 px-1 rounded">.json</code> o elige cuál usar como base de datos activa</p>
+        </div>
+        <button
+          class="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+          onclick={loadDataFiles}
+        >
+          Refresh
+        </button>
+      </div>
+
+      <!-- Upload area -->
+      <div class="mb-4">
+        <input
+          bind:this={fileInputRef}
+          type="file"
+          accept=".json"
+          class="hidden"
+          id="data-file-input"
+          onchange={(e) => {
+            const f = (e.currentTarget as HTMLInputElement).files?.[0];
+            if (f) uploadDataFile(f);
+          }}
+        />
+        <label
+          for="data-file-input"
+          class="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-600 hover:border-indigo-500 text-gray-400 hover:text-indigo-400 cursor-pointer transition-colors text-sm font-medium
+          {uploadingFile ? 'opacity-50 pointer-events-none' : ''}"
+        >
+          {#if uploadingFile}
+            <span class="animate-pulse">⏳ Subiendo…</span>
+          {:else}
+            <span>⬆ Subir archivo .json</span>
+          {/if}
+        </label>
+
+        {#if uploadError}
+          <p class="text-red-400 text-xs mt-2">⚠ {uploadError}</p>
+        {/if}
+        {#if uploadSuccess}
+          <p class="text-green-400 text-xs mt-2">{uploadSuccess}</p>
+        {/if}
+      </div>
+
+      <!-- File list -->
+      {#if dataFilesLoading}
+        <p class="text-gray-500 text-sm text-center py-4 animate-pulse">Cargando archivos…</p>
+      {:else if dataFiles.length === 0}
+        <p class="text-gray-500 text-sm text-center py-4">No hay archivos en /data/</p>
+      {:else}
+        <ul class="space-y-2">
+          {#each dataFiles as file (file.name)}
+            <li class="flex items-center gap-3 rounded-xl px-3 py-2.5
+              {file.active
+                ? 'bg-indigo-900/40 border border-indigo-600/50'
+                : 'bg-gray-700/50 border border-transparent'}">
+
+              <span class="text-lg shrink-0">{file.active ? '✅' : '📄'}</span>
+
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-sm font-mono truncate">
+                  {file.name}
+                  {#if file.active}
+                    <span class="ml-2 text-[10px] font-sans font-semibold text-indigo-400 bg-indigo-900/60 px-1.5 py-0.5 rounded">ACTIVO</span>
+                  {/if}
+                </p>
+                <p class="text-gray-400 text-xs">
+                  {formatFileSize(file.size)} · {new Date(file.modified).toLocaleString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+
+              {#if !file.active}
+                <button
+                  onclick={() => activateDataFile(file.name)}
+                  disabled={activatingFile === file.name}
+                  class="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                >
+                  {activatingFile === file.name ? '…' : 'Usar este'}
+                </button>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </div>
+
     <!-- Submissions Review -->
     <div class="bg-gray-800 rounded-2xl p-5 shadow-lg mb-8">
       <div class="flex items-center justify-between mb-4">
@@ -723,17 +913,9 @@
 
     <!-- Entry Manager -->
     <h2 class="text-lg font-bold text-white mb-4">🎡 Wheel Entries</h2>
-    <div class="flex items-center justify-between mb-6">
-      <p class="text-gray-400 text-sm">
-        {entries.length} entr{entries.length === 1 ? "y" : "ies"} on the wheel
-      </p>
-      <button
-        class="text-xs text-gray-400 hover:text-red-400 transition-colors"
-        onclick={logout}
-      >
-        Logout
-      </button>
-    </div>
+    <p class="text-gray-400 text-sm mb-6">
+      {entries.length} entr{entries.length === 1 ? "y" : "ies"} on the wheel
+    </p>
 
     <!-- Add entry -->
     <form

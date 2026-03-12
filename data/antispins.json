@@ -1,0 +1,76 @@
+{
+  "nextId": 1,
+  "spins": [],
+  "nextMessageId": 20,
+  "messages": [],
+  "entries": [
+    {
+      "id": "da17cc3d",
+      "text": "Construir en base de un sample de otra canción",
+      "description": "Compón una pieza musical utilizando un fragmento de una obra existente como núcleo creativo. Manipula el audio mediante técnicas de picado, estiramiento temporal o cambio de tono para generar un contexto sonoro nuevo. El objetivo es recontextualizar la fuente original en una narrativa musical propia."
+    },
+    {
+      "id": "58a8d948",
+      "text": "Componer sin usar el primer grado",
+      "description": "Compón una pieza musical omitiendo por completo el acorde de resolución o reposo tonal. Utiliza progresiones circulares, cadencias rotas o modos que mantengan una tensión constante y una sensación de movimiento perpetuo. El objetivo es explorar la narrativa sonora sin llegar nunca a un punto de descanso definitivo."
+    }
+  ],
+  "subWheels": [
+    {
+      "slug": "modo",
+      "label": "Modos musicales",
+      "entries": [
+        {
+          "id": "135cf2a6",
+          "text": "Lidio"
+        },
+        {
+          "id": "a673df67",
+          "text": "Frigio"
+        },
+        {
+          "id": "8bd33d38",
+          "text": "Mixolidio"
+        },
+        {
+          "id": "d9ccfd53",
+          "text": "Eólico"
+        },
+        {
+          "id": "c224c216",
+          "text": "Jónico"
+        },
+        {
+          "id": "ab673773",
+          "text": "Locrio"
+        },
+        {
+          "id": "a82362a1",
+          "text": "Dórico"
+        }
+      ]
+    },
+    {
+      "slug": "compas",
+      "label": "Compas irregular",
+      "entries": [
+        {
+          "id": "aae573ea",
+          "text": "5/4"
+        },
+        {
+          "id": "4bc312db",
+          "text": "7/8"
+        },
+        {
+          "id": "e2f7e0f6",
+          "text": "11/8"
+        },
+        {
+          "id": "3620a3bc",
+          "text": "13/8"
+        }
+      ]
+    }
+  ]
+}
