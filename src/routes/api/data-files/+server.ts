@@ -3,6 +3,7 @@ import {
   readdirSync,
   statSync,
   writeFileSync,
+  readFileSync,
   copyFileSync,
   mkdirSync,
   existsSync,
@@ -18,9 +19,28 @@ function isAuthed(request: Request): boolean {
   return validateSession(token);
 }
 
-// GET — list all .json files in /data/ (public, consistent with other GET routes)
-export const GET: RequestHandler = async () => {
+// GET — list all .json files, or download a specific one via ?download=filename
+export const GET: RequestHandler = async ({ url }) => {
   mkdirSync(DATA_DIR, { recursive: true });
+
+  const downloadName = url.searchParams.get("download");
+  if (downloadName) {
+    const safeName = basename(downloadName);
+    if (!safeName.endsWith(".json") || safeName.includes("..")) {
+      return json({ error: "Nombre de archivo inválido" }, { status: 400 });
+    }
+    const filePath = resolve(DATA_DIR, safeName);
+    if (!existsSync(filePath)) {
+      return json({ error: "Archivo no encontrado" }, { status: 404 });
+    }
+    const content = readFileSync(filePath, "utf-8");
+    return new Response(content, {
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Disposition": `attachment; filename="${safeName}"`,
+      },
+    });
+  }
 
   try {
     const files = readdirSync(DATA_DIR)

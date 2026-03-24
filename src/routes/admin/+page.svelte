@@ -463,7 +463,7 @@
       if (res.status === 401) { token = ""; sessionStorage.removeItem("admin_token"); return; }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        uploadError = err.message ?? "Error al subir el archivo";
+        uploadError = err.error ?? "Error al subir el archivo";
         return;
       }
       const data = await res.json();
@@ -723,6 +723,13 @@
                   {formatFileSize(file.size)} · {new Date(file.modified).toLocaleString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
+
+              <a
+                href="/api/data-files?download={encodeURIComponent(file.name)}"
+                download={file.name}
+                class="shrink-0 px-2 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-500 text-gray-200 text-xs font-semibold transition-colors"
+                title="Descargar"
+              >⬇</a>
 
               {#if !file.active}
                 <button

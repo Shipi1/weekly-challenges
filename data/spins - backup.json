@@ -1,6 +1,14 @@
 {
   "nextId": 1,
-  "spins": [],
+  "spins": [
+    {
+      "id": 1,
+      "winner_text": "Construir en base de un sample de otra canción",
+      "winner_color": "#6693fa",
+      "winner_description": "Compón una pieza musical utilizando un fragmento de una obra existente como núcleo creativo. Manipula el audio mediante técnicas de picado, estiramiento temporal o cambio de tono para generar un contexto sonoro nuevo. El objetivo es recontextualizar la fuente original en una narrativa musical propia.",
+      "timestamp": 1773339801882
+    }
+  ],
   "nextMessageId": 20,
   "messages": [],
   "entries": [
