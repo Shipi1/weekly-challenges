@@ -97,7 +97,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
   mkdirSync(DATA_DIR, { recursive: true });
   const targetPath = resolve(DATA_DIR, rawName);
-  writeFileSync(targetPath, text, "utf-8");
+  try {
+    writeFileSync(targetPath, text, "utf-8");
+  } catch (err) {
+    console.error("[data-files POST] Write failed:", err);
+    return json({ error: "No se pudo guardar el archivo en el servidor" }, { status: 500 });
+  }
 
   return json({ ok: true, name: rawName });
 };
