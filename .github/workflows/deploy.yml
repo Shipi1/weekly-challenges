@@ -31,4 +31,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.OWNER }}/your-app-name:latest
+          tags: ghcr.io/${{ env.OWNER }}/weekly-challenges:latest
