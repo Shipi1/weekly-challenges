@@ -320,14 +320,17 @@
           <Wheel on:stop={onWheelStopped} />
         </div>
       {:else}
-        <div class="relative w-full max-w-lg">
-          <div class="opacity-60 pointer-events-none">
+        <!-- Mobile: wheel is a decorative bg; result is centred in a full-screen section -->
+        <!-- Desktop: wheel above, result below in normal flow -->
+        <div class="relative w-full max-w-lg flex flex-col items-center justify-center min-h-[100svh] lg:min-h-0 lg:block">
+          <!-- Dimmed wheel: absolute background on mobile, normal flow on desktop -->
+          <div class="absolute inset-0 flex items-center justify-center overflow-hidden opacity-60 pointer-events-none lg:static lg:overflow-visible">
             <Wheel disabled={true} />
           </div>
 
           {#if spinStore.result}
             <div
-              class="absolute inset-0 flex items-center justify-center z-10 lg:relative lg:inset-auto lg:mt-6 lg:flex lg:justify-center"
+              class="relative z-10 w-full px-4 lg:px-0 lg:mt-6 lg:flex lg:justify-center"
             >
               <div
                 class="text-center space-y-3 bg-gray-900/80 backdrop-blur-sm rounded-2xl p-6 lg:bg-transparent lg:backdrop-blur-none lg:p-0"
