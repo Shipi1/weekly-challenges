@@ -39,3 +39,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ env.OWNER }}/weekly-challenges:latest
+      - name: Trigger Watchtower
+        run: |
+          curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_TOKEN }}" \
+          http://${{ secrets.VPS_IP }}:8081/v1/update
